@@ -11,8 +11,8 @@ gerrit_plugin(
     srcs = glob(["src/main/java/**/*.java"]),
     manifest_entries = [
         "Gerrit-PluginName: events-kafka",
-        "Gerrit-InitStep: com.googlesource.gerrit.plugins.kafka.InitConfig",
-        "Gerrit-Module: com.googlesource.gerrit.plugins.kafka.Module",
+        "Gerrit-InitStep: plugins.events-kafka.src.main.java.com.gerritforge.gerrit.plugins.kafka.InitConfig",
+        "Gerrit-Module: com.gerritforge.gerrit.plugins.kafka.Module",
         "Implementation-Title: Gerrit Apache Kafka plugin",
         "Implementation-URL: https://gerrit.googlesource.com/plugins/events-kafka",
     ],
@@ -47,14 +47,14 @@ java_library(
     visibility = ["//visibility:public"],
     exports = PLUGIN_DEPS + PLUGIN_TEST_DEPS + [
         ":events-kafka__plugin",
-        "@testcontainers-kafka//jar",
-        "@jackson-annotations//jar",
-        "@testcontainers//jar",
         "@docker-java-api//jar",
         "@docker-java-transport//jar",
         "@duct-tape//jar",
-        "@visible-assertions//jar",
+        "@jackson-annotations//jar",
         "@jna//jar",
+        "@testcontainers-kafka//jar",
+        "@testcontainers//jar",
+        "@visible-assertions//jar",
     ],
 )
 
