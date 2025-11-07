@@ -1,0 +1,21 @@
+{
+  "comments": [
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "9cb54aad_8555dedd",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 5
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1012541
+      },
+      "writtenOn": "2025-11-07T18:29:38Z",
+      "side": 1,
+      "message": "You have some left in the README, BUILD and avout:\n\n```\nBUILD:        \"Implementation-URL: https://gerrit.googlesource.com/plugins/events-kafka\",\nREADME.md:* Repository: https://gerrit.googlesource.com/plugins/events-kafka\nREADME.md:the /plugins path. The plugin depends on [events-broker](https://gerrit.googlesource.com/modules/events-broker)\nREADME.md:    git clone --recursive https://gerrit.googlesource.com/gerrit\nREADME.md:    git clone https://gerrit.googlesource.com/plugins/events-kafka gerrit/plugins/events-kafka\nREADME.md:    git clone https://gerrit.googlesource.com/modules/events-broker gerrit/plugins/events-broker\nsrc/main/resources/Documentation/about.md:__NOTE__: This use-case would require the [multi-site plugin](https://gerrit.googlesource.com/plugins/multi-site)\n\n```",
+      "revId": "bef1fbdb355d87ed0e424ed60d1414da25aa76b1",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735"
+    }
+  ]
+}
