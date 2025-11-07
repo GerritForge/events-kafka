@@ -16,6 +16,29 @@
       "message": "You have some left in the README, BUILD and avout:\n\n```\nBUILD:        \"Implementation-URL: https://gerrit.googlesource.com/plugins/events-kafka\",\nREADME.md:* Repository: https://gerrit.googlesource.com/plugins/events-kafka\nREADME.md:the /plugins path. The plugin depends on [events-broker](https://gerrit.googlesource.com/modules/events-broker)\nREADME.md:    git clone --recursive https://gerrit.googlesource.com/gerrit\nREADME.md:    git clone https://gerrit.googlesource.com/plugins/events-kafka gerrit/plugins/events-kafka\nREADME.md:    git clone https://gerrit.googlesource.com/modules/events-broker gerrit/plugins/events-broker\nsrc/main/resources/Documentation/about.md:__NOTE__: This use-case would require the [multi-site plugin](https://gerrit.googlesource.com/plugins/multi-site)\n\n```",
       "revId": "bef1fbdb355d87ed0e424ed60d1414da25aa76b1",
       "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "64725b65_a47f5247",
+        "filename": "BUILD",
+        "patchSetId": 5
+      },
+      "lineNbr": 17,
+      "author": {
+        "id": 1012541
+      },
+      "writtenOn": "2025-11-07T18:30:04Z",
+      "side": 1,
+      "message": "This should point to github",
+      "range": {
+        "startLine": 17,
+        "startChar": 30,
+        "endLine": 17,
+        "endChar": 81
+      },
+      "revId": "bef1fbdb355d87ed0e424ed60d1414da25aa76b1",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735"
     }
   ]
 }
