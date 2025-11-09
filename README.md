@@ -2,7 +2,7 @@ Kafka: Gerrit event producer for Apache Kafka
 =======================
 
 * Author: GerritForge
-* Repository: https://gerrit.googlesource.com/plugins/events-kafka
+* Repository: https://github.com/GerritForge/events-kafka
 * CI/Release: https://gerrit-ci.gerritforge.com/search/?q=events-kafka
 
 [![Build Status](https://gerrit-ci.gerritforge.com/job/plugin-events-kafka-bazel-master/lastBuild/badge/icon)](https://gerrit-ci.gerritforge.com/job/plugin-events-kafka-bazel-master/lastBuild/)
@@ -36,7 +36,7 @@ Additionally, the plugins/external_plugin_deps.bzl file needs to be
 updated to match the Kafka plugin one.
 
     git clone --recursive https://gerrit.googlesource.com/gerrit
-    git clone https://gerrit.googlesource.com/plugins/events-kafka gerrit/plugins/events-kafka
+    git clone https://github.com/GerritForge/events-kafka gerrit/plugins/events-kafka
     git clone https://gerrit.googlesource.com/modules/events-broker gerrit/plugins/events-broker
     cd gerrit
     rm plugins/external_plugin_deps.bzl

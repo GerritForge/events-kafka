@@ -23,5 +23,5 @@ Events replication
 Multiple Gerrit masters in a multi-site setup can be informed on the stream events
 happening on every node thanks to the notification to a Kafka pub/sub topic.
 
-__NOTE__: This use-case would require the [multi-site plugin](https://gerrit.googlesource.com/plugins/multi-site)
+__NOTE__: This use-case would require the [multi-site plugin](https://github.com/GerritForge/multi-site)
 on each of the Gerrit masters that are part of the same multi-site cluster.
