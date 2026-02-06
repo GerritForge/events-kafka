@@ -12,20 +12,25 @@
 package com.gerritforge.gerrit.plugins.kafka.config;
 
 import com.google.common.annotations.VisibleForTesting;
+import com.google.common.flogger.FluentLogger;
 import com.google.gerrit.extensions.annotations.PluginName;
 import com.google.gerrit.server.config.PluginConfigFactory;
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
+import org.apache.kafka.clients.consumer.ConsumerConfig;
 
 @Singleton
 public class KafkaSubscriberProperties extends KafkaProperties {
+  private static final FluentLogger logger = FluentLogger.forEnclosingClass();
   private static final long serialVersionUID = 1L;
   public static final String DEFAULT_POLLING_INTERVAL_MS = "1000";
   public static final String DEFAULT_NUMBER_OF_SUBSCRIBERS = "7";
+  private static final String DEFAULT_ENABLE_AUTO_COMMIT = "true";
 
   private final Integer pollingInterval;
   private final String groupId;
   private final Integer numberOfSubscribers;
+  private final boolean autoCommitEnabled;
 
   @Inject
   public KafkaSubscriberProperties(
@@ -37,12 +42,20 @@ public class KafkaSubscriberProperties extends KafkaProperties {
     this.groupId = getProperty("group.id");
     this.numberOfSubscribers =
         Integer.parseInt(getProperty("number.of.subscribers", DEFAULT_NUMBER_OF_SUBSCRIBERS));
+    this.autoCommitEnabled =
+        Boolean.parseBoolean(
+            getProperty(ConsumerConfig.ENABLE_AUTO_COMMIT_CONFIG, DEFAULT_ENABLE_AUTO_COMMIT));
+    if (!autoCommitEnabled) {
+      logger.atInfo().log(
+          "Auto commit disabled: setting %s=false", ConsumerConfig.ENABLE_AUTO_COMMIT_CONFIG);
+      setProperty(ConsumerConfig.ENABLE_AUTO_COMMIT_CONFIG, "false");
+    }
   }
 
   @VisibleForTesting
   public KafkaSubscriberProperties(
       int pollingInterval, String groupId, int numberOfSubscribers, ClientType clientType) {
-    this(pollingInterval, groupId, numberOfSubscribers, clientType, null, null, null);
+    this(pollingInterval, groupId, numberOfSubscribers, clientType, true, null, null, null);
   }
 
   @VisibleForTesting
@@ -51,6 +64,7 @@ public class KafkaSubscriberProperties extends KafkaProperties {
       String groupId,
       int numberOfSubscribers,
       ClientType clientType,
+      boolean autoCommitEnabled,
       String restApiUriString,
       String restApiUsername,
       String restApiPassword) {
@@ -58,6 +72,10 @@ public class KafkaSubscriberProperties extends KafkaProperties {
     this.pollingInterval = pollingInterval;
     this.groupId = groupId;
     this.numberOfSubscribers = numberOfSubscribers;
+    this.autoCommitEnabled = autoCommitEnabled;
+    if (!autoCommitEnabled) {
+      setProperty(ConsumerConfig.ENABLE_AUTO_COMMIT_CONFIG, "false");
+    }
   }
 
   public Integer getPollingInterval() {
@@ -70,5 +88,9 @@ public class KafkaSubscriberProperties extends KafkaProperties {
 
   public Integer getNumberOfSubscribers() {
     return numberOfSubscribers;
+  }
+
+  public boolean isAutoCommitEnabled() {
+    return autoCommitEnabled;
   }
 }
