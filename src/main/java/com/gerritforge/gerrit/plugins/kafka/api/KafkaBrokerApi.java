@@ -12,6 +12,7 @@
 package com.gerritforge.gerrit.plugins.kafka.api;
 
 import com.gerritforge.gerrit.eventbroker.BrokerApi;
+import com.gerritforge.gerrit.eventbroker.ContextAwareConsumer;
 import com.gerritforge.gerrit.eventbroker.TopicSubscriber;
 import com.gerritforge.gerrit.eventbroker.TopicSubscriberWithGroupId;
 import com.gerritforge.gerrit.plugins.kafka.publish.KafkaPublisher;
@@ -25,7 +26,6 @@ import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
 import java.util.Set;
-import java.util.function.Consumer;
 import java.util.stream.Collectors;
 
 public class KafkaBrokerApi implements BrokerApi {
@@ -48,12 +48,13 @@ public class KafkaBrokerApi implements BrokerApi {
   }
 
   @Override
-  public void receiveAsync(String topic, Consumer<Event> eventConsumer) {
+  public void receiveAsync(String topic, ContextAwareConsumer<Event> eventConsumer) {
     receiveAsync(topic, eventConsumer, Optional.empty());
   }
 
   @Override
-  public void receiveAsync(String topic, String groupId, Consumer<Event> eventConsumer) {
+  public void receiveAsync(
+      String topic, String groupId, ContextAwareConsumer<Event> eventConsumer) {
     receiveAsync(topic, eventConsumer, Optional.ofNullable(groupId));
   }
 
@@ -81,7 +82,10 @@ public class KafkaBrokerApi implements BrokerApi {
   public Set<TopicSubscriber> topicSubscribers() {
     return subscribers.stream()
         .filter(s -> !s.getExternalGroupId().isPresent())
-        .map(s -> TopicSubscriber.topicSubscriber(s.getTopic(), s.getMessageProcessor()))
+        .map(
+            s ->
+                com.gerritforge.gerrit.eventbroker.TopicSubscriber.topicSubscriber(
+                    s.getTopic(), s.getMessageProcessor()))
         .collect(Collectors.toSet());
   }
 
@@ -91,9 +95,11 @@ public class KafkaBrokerApi implements BrokerApi {
         .filter(s -> s.getExternalGroupId().isPresent())
         .map(
             s ->
-                TopicSubscriberWithGroupId.topicSubscriberWithGroupId(
-                    s.getExternalGroupId().get(),
-                    TopicSubscriber.topicSubscriber(s.getTopic(), s.getMessageProcessor())))
+                com.gerritforge.gerrit.eventbroker.TopicSubscriberWithGroupId
+                    .topicSubscriberWithGroupId(
+                        s.getExternalGroupId().get(),
+                        com.gerritforge.gerrit.eventbroker.TopicSubscriber.topicSubscriber(
+                            s.getTopic(), s.getMessageProcessor())))
         .collect(Collectors.toSet());
   }
 
@@ -105,7 +111,7 @@ public class KafkaBrokerApi implements BrokerApi {
   }
 
   private void receiveAsync(
-      String topic, Consumer<Event> eventConsumer, Optional<String> externalGroupId) {
+      String topic, ContextAwareConsumer<Event> eventConsumer, Optional<String> externalGroupId) {
     KafkaEventSubscriber subscriber = kafkaEventSubscriberFactory.create(externalGroupId);
     synchronized (subscribers) {
       subscribers.add(subscriber);
