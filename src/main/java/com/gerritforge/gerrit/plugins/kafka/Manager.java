@@ -45,15 +45,16 @@ public class Manager implements LifecycleListener {
     publisher.start();
     consumers.forEach(
         topicSubscriber ->
-            brokerApi.receiveAsync(topicSubscriber.topic(), topicSubscriber.consumer()));
+            brokerApi.receiveAsyncWithContext(
+                topicSubscriber.topic(), topicSubscriber.contextAwareConsumer()));
 
     consumersWithGroupId.forEach(
         topicSubscriberWithGroupId -> {
           TopicSubscriber topicSubscriber = topicSubscriberWithGroupId.topicSubscriber();
-          brokerApi.receiveAsync(
+          brokerApi.receiveAsyncWithContext(
               topicSubscriber.topic(),
               topicSubscriberWithGroupId.groupId(),
-              topicSubscriber.consumer());
+              topicSubscriber.contextAwareConsumer());
         });
   }
 

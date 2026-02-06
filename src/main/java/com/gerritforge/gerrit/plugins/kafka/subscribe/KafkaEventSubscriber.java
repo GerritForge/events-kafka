@@ -11,6 +11,8 @@
 
 package com.gerritforge.gerrit.plugins.kafka.subscribe;
 
+import static com.gerritforge.gerrit.eventbroker.BrokerApi.DO_NOTHING_MESSAGE_CONTEXT;
+
 import com.google.gerrit.server.events.Event;
 import java.util.Optional;
 
@@ -28,6 +30,18 @@ public interface KafkaEventSubscriber {
    * @param messageProcessor consumer function for processing incoming messages
    */
   void subscribe(String topic, java.util.function.Consumer<Event> messageProcessor);
+
+  /**
+   * Subscribe to a topic and receive messages asynchronously with context.
+   *
+   * @param topic Kafka topic name
+   * @param messageProcessor consumer function for processing incoming messages with context
+   */
+  default void subscribe(
+      String topic,
+      com.gerritforge.gerrit.eventbroker.ContextAwareConsumer<Event> messageProcessor) {
+    subscribe(topic, (event) -> messageProcessor.accept(event, DO_NOTHING_MESSAGE_CONTEXT));
+  }
 
   /** Shutdown Kafka consumer. */
   void shutdown();

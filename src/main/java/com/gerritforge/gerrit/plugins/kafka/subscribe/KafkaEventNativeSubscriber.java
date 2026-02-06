@@ -10,8 +10,10 @@
 // limitations under the License.
 package com.gerritforge.gerrit.plugins.kafka.subscribe;
 
+import static com.gerritforge.gerrit.eventbroker.BrokerApi.DO_NOTHING_MESSAGE_CONTEXT;
 import static java.nio.charset.StandardCharsets.UTF_8;
 
+import com.gerritforge.gerrit.eventbroker.ContextAwareConsumer;
 import com.gerritforge.gerrit.plugins.kafka.broker.ConsumerExecutor;
 import com.gerritforge.gerrit.plugins.kafka.config.KafkaSubscriberProperties;
 import com.google.common.flogger.FluentLogger;
@@ -44,8 +46,10 @@ public class KafkaEventNativeSubscriber implements KafkaEventSubscriber {
   private final KafkaEventSubscriberMetrics subscriberMetrics;
   private final KafkaConsumerFactory consumerFactory;
   private final Deserializer<byte[]> keyDeserializer;
+  private final boolean autoCommitEnabled;
 
   private java.util.function.Consumer<Event> messageProcessor;
+  private ContextAwareConsumer<Event> contextAwareMessageProcessor;
   private String topic;
   private AtomicBoolean resetOffset = new AtomicBoolean(false);
 
@@ -72,6 +76,7 @@ public class KafkaEventNativeSubscriber implements KafkaEventSubscriber {
     this.externalGroupId = externalGroupId;
     this.configuration = (KafkaSubscriberProperties) configuration.clone();
     externalGroupId.ifPresent(gid -> this.configuration.setProperty("group.id", gid));
+    this.autoCommitEnabled = this.configuration.isAutoCommitEnabled();
   }
 
   /* (non-Javadoc)
@@ -81,6 +86,18 @@ public class KafkaEventNativeSubscriber implements KafkaEventSubscriber {
   public void subscribe(String topic, java.util.function.Consumer<Event> messageProcessor) {
     this.topic = topic;
     this.messageProcessor = messageProcessor;
+    this.contextAwareMessageProcessor = (event, ctx) -> messageProcessor.accept(event);
+    logger.atInfo().log(
+        "Kafka consumer subscribing to topic alias [%s] for event topic [%s] with groupId [%s]",
+        topic, topic, configuration.getGroupId());
+    runReceiver(consumerFactory.create(configuration, keyDeserializer));
+  }
+
+  @Override
+  public void subscribe(String topic, ContextAwareConsumer<Event> messageProcessor) {
+    this.topic = topic;
+    this.contextAwareMessageProcessor = messageProcessor;
+    this.messageProcessor = event -> messageProcessor.accept(event, DO_NOTHING_MESSAGE_CONTEXT);
     logger.atInfo().log(
         "Kafka consumer subscribing to topic alias [%s] for event topic [%s] with groupId [%s]",
         topic, topic, configuration.getGroupId());
@@ -177,7 +194,9 @@ public class KafkaEventNativeSubscriber implements KafkaEventSubscriber {
                 try (ManualRequestContext ctx = oneOffCtx.open()) {
                   Event event =
                       valueDeserializer.deserialize(consumerRecord.topic(), consumerRecord.value());
-                  messageProcessor.accept(event);
+                  contextAwareMessageProcessor.accept(
+                      event,
+                      new CommitIfEnabledContext(autoCommitEnabled, consumerRecord, consumer));
                 } catch (Exception e) {
                   logger.atSevere().withCause(e).log(
                       "Malformed event '%s': [Exception: %s]",
