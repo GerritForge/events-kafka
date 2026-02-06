@@ -11,9 +11,11 @@
 
 package com.gerritforge.gerrit.plugins.kafka.api;
 
+import com.gerritforge.gerrit.eventbroker.AckAwareConsumer;
 import com.gerritforge.gerrit.eventbroker.BrokerApi;
 import com.gerritforge.gerrit.eventbroker.TopicSubscriber;
 import com.gerritforge.gerrit.eventbroker.TopicSubscriberWithGroupId;
+import com.gerritforge.gerrit.plugins.kafka.config.KafkaSubscriberProperties;
 import com.gerritforge.gerrit.plugins.kafka.publish.KafkaPublisher;
 import com.gerritforge.gerrit.plugins.kafka.subscribe.KafkaEventSubscriber;
 import com.google.common.util.concurrent.ListenableFuture;
@@ -25,21 +27,24 @@ import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
 import java.util.Set;
-import java.util.function.Consumer;
 import java.util.stream.Collectors;
 
 public class KafkaBrokerApi implements BrokerApi {
 
   private final KafkaPublisher publisher;
   private final KafkaEventSubscriber.Factory kafkaEventSubscriberFactory;
+  private final boolean autoAck;
   private List<KafkaEventSubscriber> subscribers;
 
   @Inject
   public KafkaBrokerApi(
-      KafkaPublisher publisher, KafkaEventSubscriber.Factory kafkaEventSubscriberFactory) {
+      KafkaPublisher publisher,
+      KafkaEventSubscriber.Factory kafkaEventSubscriberFactory,
+      KafkaSubscriberProperties subscriberProperties) {
     this.publisher = publisher;
     this.kafkaEventSubscriberFactory = kafkaEventSubscriberFactory;
     subscribers = Collections.synchronizedList(new ArrayList<>());
+    this.autoAck = subscriberProperties.isAutoCommitEnabled();
   }
 
   @Override
@@ -48,12 +53,12 @@ public class KafkaBrokerApi implements BrokerApi {
   }
 
   @Override
-  public void receiveAsync(String topic, Consumer<Event> eventConsumer) {
+  public void receiveAsync(String topic, AckAwareConsumer<Event> eventConsumer) {
     receiveAsync(topic, eventConsumer, Optional.empty());
   }
 
   @Override
-  public void receiveAsync(String topic, String groupId, Consumer<Event> eventConsumer) {
+  public void receiveAsync(String topic, String groupId, AckAwareConsumer<Event> eventConsumer) {
     receiveAsync(topic, eventConsumer, Optional.ofNullable(groupId));
   }
 
@@ -104,8 +109,13 @@ public class KafkaBrokerApi implements BrokerApi {
         .forEach(subscriber -> subscriber.resetOffset());
   }
 
+  @Override
+  public boolean isAutoAck() {
+    return autoAck;
+  }
+
   private void receiveAsync(
-      String topic, Consumer<Event> eventConsumer, Optional<String> externalGroupId) {
+      String topic, AckAwareConsumer<Event> eventConsumer, Optional<String> externalGroupId) {
     KafkaEventSubscriber subscriber = kafkaEventSubscriberFactory.create(externalGroupId);
     synchronized (subscribers) {
       subscribers.add(subscriber);
