@@ -16,6 +16,8 @@ import static com.gerritforge.gerrit.eventbroker.TopicSubscriberWithGroupId.topi
 import static com.google.common.truth.Truth.assertThat;
 import static org.mockito.Mockito.mock;
 
+import com.gerritforge.gerrit.eventbroker.ContextAwareConsumer;
+import com.gerritforge.gerrit.eventbroker.MessageContext;
 import com.gerritforge.gerrit.plugins.kafka.KafkaContainerProvider;
 import com.gerritforge.gerrit.plugins.kafka.KafkaRestContainer;
 import com.gerritforge.gerrit.plugins.kafka.config.KafkaProperties;
@@ -48,7 +50,6 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
-import java.util.function.Consumer;
 import org.apache.kafka.clients.producer.Producer;
 import org.apache.kafka.clients.producer.ProducerConfig;
 import org.junit.After;
@@ -74,6 +75,7 @@ public class KafkaBrokerApiTest {
   static String restApiUsername;
   static String restApiPassword;
 
+  static final boolean AUTO_COMMIT_ENABLED = true;
   static final int TEST_NUM_SUBSCRIBERS = 1;
   static final String TEST_GROUP_ID = KafkaBrokerApiTest.class.getName();
   static final int TEST_POLLING_INTERVAL_MSEC = 100;
@@ -140,7 +142,7 @@ public class KafkaBrokerApiTest {
     }
   }
 
-  public static class TestConsumer implements Consumer<Event> {
+  public static class TestConsumer implements ContextAwareConsumer<Event> {
     public final List<Event> messages = new ArrayList<>();
     private CountDownLatch[] locks;
 
@@ -156,7 +158,7 @@ public class KafkaBrokerApiTest {
     }
 
     @Override
-    public void accept(Event message) {
+    public void accept(Event message, MessageContext messageContext) {
       messages.add(message);
       for (CountDownLatch countDownLatch : locks) {
         countDownLatch.countDown();
