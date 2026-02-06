@@ -53,6 +53,7 @@ public class KafkaBrokerRestApiTest extends KafkaBrokerRestApiTestBase {
                 TEST_GROUP_ID,
                 TEST_NUM_SUBSCRIBERS,
                 ClientType.REST,
+                AUTO_COMMIT_ENABLED,
                 getKafkaRestApiUriString(),
                 restApiUsername,
                 restApiPassword);
