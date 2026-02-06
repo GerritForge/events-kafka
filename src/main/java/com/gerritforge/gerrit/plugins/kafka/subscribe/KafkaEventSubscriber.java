@@ -29,6 +29,18 @@ public interface KafkaEventSubscriber {
    */
   void subscribe(String topic, java.util.function.Consumer<Event> messageProcessor);
 
+  /**
+   * Subscribe to a topic and receive messages asynchronously with context.
+   *
+   * @param topic Kafka topic name
+   * @param messageProcessor consumer function for processing incoming messages with context
+   */
+  default void subscribe(
+      String topic,
+      com.gerritforge.gerrit.eventbroker.ContextAwareConsumer<Event> messageProcessor) {
+    subscribe(topic, (event) -> messageProcessor.accept(event, () -> {}));
+  }
+
   /** Shutdown Kafka consumer. */
   void shutdown();
 
