@@ -74,6 +74,7 @@ public class KafkaBrokerApiTest {
   static String restApiUsername;
   static String restApiPassword;
 
+  static final boolean AUTO_COMMIT_ENABLED = true;
   static final int TEST_NUM_SUBSCRIBERS = 1;
   static final String TEST_GROUP_ID = KafkaBrokerApiTest.class.getName();
   static final int TEST_POLLING_INTERVAL_MSEC = 100;
