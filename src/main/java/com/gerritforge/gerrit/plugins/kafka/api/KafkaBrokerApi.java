@@ -11,6 +11,7 @@
 
 package com.gerritforge.gerrit.plugins.kafka.api;
 
+import com.gerritforge.gerrit.eventbroker.AckAwareConsumer;
 import com.gerritforge.gerrit.eventbroker.BrokerApi;
 import com.gerritforge.gerrit.eventbroker.TopicSubscriber;
 import com.gerritforge.gerrit.eventbroker.TopicSubscriberWithGroupId;
@@ -25,7 +26,6 @@ import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
 import java.util.Set;
-import java.util.function.Consumer;
 import java.util.stream.Collectors;
 
 public class KafkaBrokerApi implements BrokerApi {
@@ -48,12 +48,12 @@ public class KafkaBrokerApi implements BrokerApi {
   }
 
   @Override
-  public void receiveAsync(String topic, Consumer<Event> eventConsumer) {
+  public void receiveAsync(String topic, AckAwareConsumer<Event> eventConsumer) {
     receiveAsync(topic, eventConsumer, Optional.empty());
   }
 
   @Override
-  public void receiveAsync(String topic, String groupId, Consumer<Event> eventConsumer) {
+  public void receiveAsync(String topic, String groupId, AckAwareConsumer<Event> eventConsumer) {
     receiveAsync(topic, eventConsumer, Optional.ofNullable(groupId));
   }
 
@@ -105,7 +105,7 @@ public class KafkaBrokerApi implements BrokerApi {
   }
 
   private void receiveAsync(
-      String topic, Consumer<Event> eventConsumer, Optional<String> externalGroupId) {
+      String topic, AckAwareConsumer<Event> eventConsumer, Optional<String> externalGroupId) {
     KafkaEventSubscriber subscriber = kafkaEventSubscriberFactory.create(externalGroupId);
     synchronized (subscribers) {
       subscribers.add(subscriber);
