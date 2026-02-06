@@ -12,14 +12,15 @@
 package com.gerritforge.gerrit.plugins.kafka.api;
 
 import com.gerritforge.gerrit.eventbroker.BrokerApi;
+import com.gerritforge.gerrit.eventbroker.ContextAwareConsumer;
 import com.gerritforge.gerrit.eventbroker.TopicSubscriber;
 import com.gerritforge.gerrit.eventbroker.TopicSubscriberWithGroupId;
+import com.gerritforge.gerrit.plugins.kafka.publish.KafkaPublisher;
+import com.gerritforge.gerrit.plugins.kafka.subscribe.KafkaEventSubscriber;
 import com.google.common.util.concurrent.ListenableFuture;
 import com.google.gerrit.common.Nullable;
 import com.google.gerrit.server.events.Event;
 import com.google.inject.Inject;
-import com.gerritforge.gerrit.plugins.kafka.publish.KafkaPublisher;
-import com.gerritforge.gerrit.plugins.kafka.subscribe.KafkaEventSubscriber;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
@@ -49,11 +50,22 @@ public class KafkaBrokerApi implements BrokerApi {
 
   @Override
   public void receiveAsync(String topic, Consumer<Event> eventConsumer) {
-    receiveAsync(topic, eventConsumer, Optional.empty());
+    receiveAsync(topic, (event, ctx) -> eventConsumer.accept(event), Optional.empty());
   }
 
   @Override
   public void receiveAsync(String topic, String groupId, Consumer<Event> eventConsumer) {
+    receiveAsync(topic, (event, ctx) -> eventConsumer.accept(event), Optional.ofNullable(groupId));
+  }
+
+  @Override
+  public void receiveAsync(String topic, ContextAwareConsumer<Event> eventConsumer) {
+    receiveAsync(topic, eventConsumer, Optional.empty());
+  }
+
+  @Override
+  public void receiveAsync(
+      String topic, String groupId, ContextAwareConsumer<Event> eventConsumer) {
     receiveAsync(topic, eventConsumer, Optional.ofNullable(groupId));
   }
 
@@ -105,7 +117,7 @@ public class KafkaBrokerApi implements BrokerApi {
   }
 
   private void receiveAsync(
-      String topic, Consumer<Event> eventConsumer, Optional<String> externalGroupId) {
+      String topic, ContextAwareConsumer<Event> eventConsumer, Optional<String> externalGroupId) {
     KafkaEventSubscriber subscriber = kafkaEventSubscriberFactory.create(externalGroupId);
     synchronized (subscribers) {
       subscribers.add(subscriber);

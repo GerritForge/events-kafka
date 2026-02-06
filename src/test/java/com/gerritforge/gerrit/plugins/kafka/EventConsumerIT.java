@@ -16,6 +16,7 @@ import static java.util.concurrent.TimeUnit.MILLISECONDS;
 import static org.junit.Assert.fail;
 
 import com.gerritforge.gerrit.eventbroker.BrokerApi;
+import com.gerritforge.gerrit.plugins.kafka.config.KafkaProperties;
 import com.google.common.base.Stopwatch;
 import com.google.common.collect.Iterables;
 import com.google.gerrit.acceptance.LightweightPluginDaemonTest;
@@ -31,7 +32,6 @@ import com.google.gerrit.server.events.Event;
 import com.google.gerrit.server.events.EventGsonProvider;
 import com.google.gerrit.server.events.ProjectCreatedEvent;
 import com.google.gson.Gson;
-import com.gerritforge.gerrit.plugins.kafka.config.KafkaProperties;
 import java.time.Duration;
 import java.util.ArrayList;
 import java.util.Collections;
@@ -141,7 +141,8 @@ public class EventConsumerIT extends LightweightPluginDaemonTest {
 
     BrokerApi kafkaBrokerApi = kafkaBrokerApi();
     kafkaBrokerApi.send(topic, eventMessage);
-    kafkaBrokerApi.receiveAsync(topic, consumerGroup1, receivedEventsWithGroupId1::add);
+    kafkaBrokerApi.receiveAsync(
+        topic, consumerGroup1, event -> receivedEventsWithGroupId1.add(event));
 
     waitUntil(() -> receivedEventsWithGroupId1.size() == 1, WAIT_FOR_POLL_TIMEOUT);
     assertThat(gson.toJson(receivedEventsWithGroupId1.get(0))).isEqualTo(gson.toJson(eventMessage));
@@ -167,7 +168,7 @@ public class EventConsumerIT extends LightweightPluginDaemonTest {
     BrokerApi kafkaBrokerApi = kafkaBrokerApi();
     kafkaBrokerApi.send(topic, eventMessage);
 
-    kafkaBrokerApi.receiveAsync(topic, receivedEvents::add);
+    kafkaBrokerApi.receiveAsync(topic, event -> receivedEvents.add(event));
 
     waitUntil(() -> receivedEvents.size() == 1, WAIT_FOR_POLL_TIMEOUT);
 
