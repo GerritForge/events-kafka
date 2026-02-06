@@ -12,6 +12,8 @@ package com.gerritforge.gerrit.plugins.kafka.subscribe;
 
 import static java.nio.charset.StandardCharsets.UTF_8;
 
+import com.gerritforge.gerrit.eventbroker.ContextAwareConsumer;
+import com.gerritforge.gerrit.eventbroker.MessageContext;
 import com.gerritforge.gerrit.plugins.kafka.broker.ConsumerExecutor;
 import com.gerritforge.gerrit.plugins.kafka.config.KafkaSubscriberProperties;
 import com.gerritforge.gerrit.plugins.kafka.rest.KafkaRestClient;
@@ -77,7 +79,7 @@ public class KafkaEventRestSubscriber implements KafkaEventSubscriber {
   private final KafkaEventSubscriberMetrics subscriberMetrics;
   private final Gson gson;
 
-  private java.util.function.Consumer<Event> messageProcessor;
+  private ContextAwareConsumer<Event> messageProcessor;
   private String topic;
   private final KafkaRestClient restClient;
   private final AtomicBoolean resetOffset;
@@ -110,12 +112,12 @@ public class KafkaEventRestSubscriber implements KafkaEventSubscriber {
   }
 
   /* (non-Javadoc)
-   * @see com.gerritforge.gerrit.plugins.kafka.subscribe.KafkaEventSubscriber#subscribe(java.lang.String, java.util.function.Consumer)
+   * @see com.gerritforge.gerrit.plugins.kafka.subscribe.KafkaEventSubscriber#subscribe(ContextAwareConsumer)
    */
   @Override
-  public void subscribe(String topic, java.util.function.Consumer<Event> messageProcessor) {
+  public void subscribe(String topic, ContextAwareConsumer<Event> contextAwareConsumer) {
     this.topic = topic;
-    this.messageProcessor = messageProcessor;
+    this.messageProcessor = contextAwareConsumer;
     logger.atInfo().log(
         "Kafka consumer subscribing to topic alias [%s] for event topic [%s] with groupId [%s]",
         topic, topic, configuration.getGroupId());
@@ -148,7 +150,7 @@ public class KafkaEventRestSubscriber implements KafkaEventSubscriber {
    * @see com.gerritforge.gerrit.plugins.kafka.subscribe.KafkaEventSubscriber#getMessageProcessor()
    */
   @Override
-  public java.util.function.Consumer<Event> getMessageProcessor() {
+  public ContextAwareConsumer<Event> getMessageProcessor() {
     return messageProcessor;
   }
 
@@ -219,7 +221,8 @@ public class KafkaEventRestSubscriber implements KafkaEventSubscriber {
                 try (ManualRequestContext ctx = oneOffCtx.open()) {
                   Event event =
                       valueDeserializer.deserialize(consumerRecord.topic(), consumerRecord.value());
-                  messageProcessor.accept(event);
+                  // REST path does not support manual commit; providing noop MessageContext
+                  messageProcessor.accept(event, MessageContext.noop());
                 } catch (Exception e) {
                   logger.atSevere().withCause(e).log(
                       "Malformed event '%s'", new String(consumerRecord.value(), UTF_8));

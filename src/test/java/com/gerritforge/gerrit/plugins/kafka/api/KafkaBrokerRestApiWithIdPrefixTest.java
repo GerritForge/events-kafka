@@ -53,6 +53,7 @@ public class KafkaBrokerRestApiWithIdPrefixTest extends KafkaBrokerRestApiTestBa
                 TEST_GROUP_ID,
                 TEST_NUM_SUBSCRIBERS,
                 ClientType.REST,
+                AUTO_COMMIT_ENABLED,
                 getApiUriString(),
                 null,
                 null);

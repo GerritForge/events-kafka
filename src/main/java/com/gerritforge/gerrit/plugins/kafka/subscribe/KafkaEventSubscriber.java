@@ -11,6 +11,7 @@
 
 package com.gerritforge.gerrit.plugins.kafka.subscribe;
 
+import com.gerritforge.gerrit.eventbroker.ContextAwareConsumer;
 import com.google.gerrit.server.events.Event;
 import java.util.Optional;
 
@@ -27,17 +28,17 @@ public interface KafkaEventSubscriber {
    * @param topic Kafka topic name
    * @param messageProcessor consumer function for processing incoming messages
    */
-  void subscribe(String topic, java.util.function.Consumer<Event> messageProcessor);
+  void subscribe(String topic, ContextAwareConsumer<Event> messageProcessor);
 
   /** Shutdown Kafka consumer. */
   void shutdown();
 
   /**
-   * Returns the current consumer function for the subscribed topic.
+   * Returns the current context aware consumer function for the subscribed topic.
    *
    * @return the default topic consumer function.
    */
-  java.util.function.Consumer<Event> getMessageProcessor();
+  ContextAwareConsumer<Event> getMessageProcessor();
 
   /**
    * Returns the current subscribed topic name.
