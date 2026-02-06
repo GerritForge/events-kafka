@@ -12,14 +12,21 @@ package com.gerritforge.gerrit.plugins.kafka.subscribe;
 
 import static java.nio.charset.StandardCharsets.UTF_8;
 
+import com.gerritforge.gerrit.eventbroker.ContextAwareConsumer;
+import com.gerritforge.gerrit.eventbroker.MessageContext;
+import com.gerritforge.gerrit.plugins.kafka.broker.ConsumerExecutor;
+import com.gerritforge.gerrit.plugins.kafka.config.KafkaSubscriberProperties;
 import com.google.common.flogger.FluentLogger;
 import com.google.gerrit.server.events.Event;
 import com.google.gerrit.server.util.ManualRequestContext;
 import com.google.gerrit.server.util.OneOffRequestContext;
 import com.google.inject.Inject;
 import com.google.inject.assistedinject.Assisted;
+<<<<<<< Updated upstream
 import com.gerritforge.gerrit.plugins.kafka.broker.ConsumerExecutor;
 import com.gerritforge.gerrit.plugins.kafka.config.KafkaSubscriberProperties;
+=======
+>>>>>>> Stashed changes
 import java.time.Duration;
 import java.util.Collections;
 import java.util.Optional;
@@ -74,8 +81,17 @@ public class KafkaEventNativeSubscriber implements KafkaEventSubscriber {
     externalGroupId.ifPresent(gid -> this.configuration.setProperty("group.id", gid));
   }
 
+<<<<<<< Updated upstream
   /* (non-Javadoc)
    * @see com.gerritforge.gerrit.plugins.kafka.subscribe.KafkaEventSubscriber#subscribe(java.lang.String, java.util.function.Consumer)
+=======
+  /*
+   * (non-Javadoc)
+   *
+   * @see
+   * com.gerritforge.gerrit.plugins.kafka.subscribe.KafkaEventSubscriber#subscribe
+   * (java.lang.String, java.util.function.Consumer)
+>>>>>>> Stashed changes
    */
   @Override
   public void subscribe(String topic, java.util.function.Consumer<Event> messageProcessor) {
@@ -100,8 +116,17 @@ public class KafkaEventNativeSubscriber implements KafkaEventSubscriber {
     }
   }
 
+<<<<<<< Updated upstream
   /* (non-Javadoc)
    * @see com.gerritforge.gerrit.plugins.kafka.subscribe.KafkaEventSubscriber#shutdown()
+=======
+  /*
+   * (non-Javadoc)
+   *
+   * @see
+   * com.gerritforge.gerrit.plugins.kafka.subscribe.KafkaEventSubscriber#shutdown(
+   * )
+>>>>>>> Stashed changes
    */
   @Override
   public void shutdown() {
@@ -109,24 +134,49 @@ public class KafkaEventNativeSubscriber implements KafkaEventSubscriber {
     receiver.wakeup();
   }
 
+<<<<<<< Updated upstream
   /* (non-Javadoc)
    * @see com.gerritforge.gerrit.plugins.kafka.subscribe.KafkaEventSubscriber#getMessageProcessor()
+=======
+  /*
+   * (non-Javadoc)
+   *
+   * @see com.gerritforge.gerrit.plugins.kafka.subscribe.KafkaEventSubscriber#
+   * getMessageProcessor()
+>>>>>>> Stashed changes
    */
   @Override
   public java.util.function.Consumer<Event> getMessageProcessor() {
     return messageProcessor;
   }
 
+<<<<<<< Updated upstream
   /* (non-Javadoc)
    * @see com.gerritforge.gerrit.plugins.kafka.subscribe.KafkaEventSubscriber#getTopic()
+=======
+  /*
+   * (non-Javadoc)
+   *
+   * @see
+   * com.gerritforge.gerrit.plugins.kafka.subscribe.KafkaEventSubscriber#getTopic(
+   * )
+>>>>>>> Stashed changes
    */
   @Override
   public String getTopic() {
     return topic;
   }
 
+<<<<<<< Updated upstream
   /* (non-Javadoc)
    * @see com.gerritforge.gerrit.plugins.kafka.subscribe.KafkaEventSubscriber#resetOffset()
+=======
+  /*
+   * (non-Javadoc)
+   *
+   * @see com.gerritforge.gerrit.plugins.kafka.subscribe.KafkaEventSubscriber#
+   * resetOffset()
+>>>>>>> Stashed changes
    */
   @Override
   public void resetOffset() {
@@ -177,7 +227,24 @@ public class KafkaEventNativeSubscriber implements KafkaEventSubscriber {
                 try (ManualRequestContext ctx = oneOffCtx.open()) {
                   Event event =
                       valueDeserializer.deserialize(consumerRecord.topic(), consumerRecord.value());
+<<<<<<< Updated upstream
                   messageProcessor.accept(event);
+=======
+
+                  MessageContext messageContext =
+                      () ->
+                          consumer.commitSync(
+                              Collections.singletonMap(
+                                  new TopicPartition(
+                                      consumerRecord.topic(), consumerRecord.partition()),
+                                  new OffsetAndMetadata(consumerRecord.offset() + 1)));
+
+                  if (messageProcessor instanceof ContextAwareConsumer) {
+                    ((ContextAwareConsumer) messageProcessor).accept(event, messageContext);
+                  } else {
+                    messageProcessor.accept(event);
+                  }
+>>>>>>> Stashed changes
                 } catch (Exception e) {
                   logger.atSevere().withCause(e).log(
                       "Malformed event '%s': [Exception: %s]",
