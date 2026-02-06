@@ -11,11 +11,13 @@
 
 package com.gerritforge.gerrit.plugins.kafka.api;
 
-import static com.gerritforge.gerrit.eventbroker.TopicSubscriber.topicSubscriber;
-import static com.gerritforge.gerrit.eventbroker.TopicSubscriberWithGroupId.topicSubscriberWithGroupId;
+import static com.gerritforge.gerrit.eventbroker.TopicSubscriberWithContext.topicSubscriber;
+import static com.gerritforge.gerrit.eventbroker.TopicSubscriberWithContextWithGroupId.topicSubscriberWithGroupId;
 import static com.google.common.truth.Truth.assertThat;
 import static org.mockito.Mockito.mock;
 
+import com.gerritforge.gerrit.eventbroker.ContextAwareConsumer;
+import com.gerritforge.gerrit.eventbroker.MessageContext;
 import com.gerritforge.gerrit.plugins.kafka.KafkaContainerProvider;
 import com.gerritforge.gerrit.plugins.kafka.KafkaRestContainer;
 import com.gerritforge.gerrit.plugins.kafka.config.KafkaProperties;
@@ -48,7 +50,6 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
-import java.util.function.Consumer;
 import org.apache.kafka.clients.producer.Producer;
 import org.apache.kafka.clients.producer.ProducerConfig;
 import org.junit.After;
@@ -74,6 +75,7 @@ public class KafkaBrokerApiTest {
   static String restApiUsername;
   static String restApiPassword;
 
+  static final boolean AUTO_COMMIT_ENABLED = true;
   static final int TEST_NUM_SUBSCRIBERS = 1;
   static final String TEST_GROUP_ID = KafkaBrokerApiTest.class.getName();
   static final int TEST_POLLING_INTERVAL_MSEC = 100;
@@ -140,7 +142,7 @@ public class KafkaBrokerApiTest {
     }
   }
 
-  public static class TestConsumer implements Consumer<Event> {
+  public static class TestConsumer implements ContextAwareConsumer<Event> {
     public final List<Event> messages = new ArrayList<>();
     private CountDownLatch[] locks;
 
@@ -156,7 +158,7 @@ public class KafkaBrokerApiTest {
     }
 
     @Override
-    public void accept(Event message) {
+    public void accept(Event message, MessageContext messageContext) {
       messages.add(message);
       for (CountDownLatch countDownLatch : locks) {
         countDownLatch.countDown();
@@ -251,7 +253,7 @@ public class KafkaBrokerApiTest {
     Event testEventMessage = new ProjectCreatedEvent();
     testEventMessage.instanceId = TEST_INSTANCE_ID;
 
-    kafkaBrokerApi.receiveAsync(testTopic, testConsumer);
+    kafkaBrokerApi.receiveAsyncWithContext(testTopic, testConsumer);
     kafkaBrokerApi.send(testTopic, testEventMessage);
 
     assertThat(testConsumer.await()).isTrue();
@@ -277,7 +279,7 @@ public class KafkaBrokerApiTest {
     testEventMessage.instanceId = TEST_INSTANCE_ID;
 
     kafkaBrokerApi.send(testTopic, testEventMessage);
-    kafkaBrokerApi.receiveAsync(testTopic, testConsumer);
+    kafkaBrokerApi.receiveAsyncWithContext(testTopic, testConsumer);
 
     assertThat(testConsumer.await()).isTrue();
     assertThat(testConsumer.messages).hasSize(1);
@@ -296,7 +298,7 @@ public class KafkaBrokerApiTest {
     Event testEventMessage = new ProjectCreatedEvent();
 
     TestConsumer testConsumer = new TestConsumer(2);
-    kafkaBrokerApi.receiveAsync(testTopic, testConsumer);
+    kafkaBrokerApi.receiveAsyncWithContext(testTopic, testConsumer);
 
     kafkaBrokerApi.send(testTopic, testEventMessage);
     assertThat(testConsumer.await(1)).isTrue();
@@ -321,7 +323,7 @@ public class KafkaBrokerApiTest {
     testEventMessage.instanceId = TEST_INSTANCE_ID;
 
     kafkaBrokerApi.send(testTopic, testEventMessage);
-    kafkaBrokerApi.receiveAsync(testTopic, "group-id-1", testConsumer);
+    kafkaBrokerApi.receiveAsyncWithContext(testTopic, "group-id-1", testConsumer);
 
     assertThat(testConsumer.await()).isTrue();
     assertThat(testConsumer.messages).hasSize(1);
@@ -339,12 +341,12 @@ public class KafkaBrokerApiTest {
     String testTopic = testTopic();
     TestConsumer testConsumer = new TestConsumer(1);
 
-    assertThat(kafkaBrokerApi.topicSubscribers()).isEmpty();
-    assertThat(kafkaBrokerApi.topicSubscribersWithGroupId()).isEmpty();
-    kafkaBrokerApi.receiveAsync(testTopic, testConsumer);
-    assertThat(kafkaBrokerApi.topicSubscribers())
+    assertThat(kafkaBrokerApi.topicSubscribersWithContext()).isEmpty();
+    assertThat(kafkaBrokerApi.topicSubscribersWithContextAndGroupId()).isEmpty();
+    kafkaBrokerApi.receiveAsyncWithContext(testTopic, testConsumer);
+    assertThat(kafkaBrokerApi.topicSubscribersWithContext())
         .containsExactly(topicSubscriber(testTopic, testConsumer));
-    assertThat(kafkaBrokerApi.topicSubscribersWithGroupId()).isEmpty();
+    assertThat(kafkaBrokerApi.topicSubscribersWithContextAndGroupId()).isEmpty();
   }
 
   @Test
@@ -357,11 +359,11 @@ public class KafkaBrokerApiTest {
     String groupId = "group_id_1";
     TestConsumer testConsumer = new TestConsumer(1);
 
-    assertThat(kafkaBrokerApi.topicSubscribers()).isEmpty();
-    assertThat(kafkaBrokerApi.topicSubscribersWithGroupId()).isEmpty();
-    kafkaBrokerApi.receiveAsync(testTopic, groupId, testConsumer);
-    assertThat(kafkaBrokerApi.topicSubscribers()).isEmpty();
-    assertThat(kafkaBrokerApi.topicSubscribersWithGroupId())
+    assertThat(kafkaBrokerApi.topicSubscribersWithContext()).isEmpty();
+    assertThat(kafkaBrokerApi.topicSubscribersWithContextAndGroupId()).isEmpty();
+    kafkaBrokerApi.receiveAsyncWithContext(testTopic, groupId, testConsumer);
+    assertThat(kafkaBrokerApi.topicSubscribersWithContext()).isEmpty();
+    assertThat(kafkaBrokerApi.topicSubscribersWithContextAndGroupId())
         .containsExactly(
             topicSubscriberWithGroupId(groupId, topicSubscriber(testTopic, testConsumer)));
   }
@@ -377,12 +379,12 @@ public class KafkaBrokerApiTest {
     TestConsumer testConsumer1 = new TestConsumer(1);
     TestConsumer testConsumer2 = new TestConsumer(1);
 
-    assertThat(kafkaBrokerApi.topicSubscribers()).isEmpty();
-    assertThat(kafkaBrokerApi.topicSubscribersWithGroupId()).isEmpty();
-    kafkaBrokerApi.receiveAsync(testTopic, groupId, testConsumer1);
-    kafkaBrokerApi.receiveAsync(testTopic, groupId, testConsumer2);
-    assertThat(kafkaBrokerApi.topicSubscribers()).isEmpty();
-    assertThat(kafkaBrokerApi.topicSubscribersWithGroupId())
+    assertThat(kafkaBrokerApi.topicSubscribersWithContext()).isEmpty();
+    assertThat(kafkaBrokerApi.topicSubscribersWithContextAndGroupId()).isEmpty();
+    kafkaBrokerApi.receiveAsyncWithContext(testTopic, groupId, testConsumer1);
+    kafkaBrokerApi.receiveAsyncWithContext(testTopic, groupId, testConsumer2);
+    assertThat(kafkaBrokerApi.topicSubscribersWithContext()).isEmpty();
+    assertThat(kafkaBrokerApi.topicSubscribersWithContextAndGroupId())
         .containsExactly(
             topicSubscriberWithGroupId(groupId, topicSubscriber(testTopic, testConsumer1)),
             topicSubscriberWithGroupId(groupId, topicSubscriber(testTopic, testConsumer2)));
@@ -399,14 +401,14 @@ public class KafkaBrokerApiTest {
     TestConsumer testConsumer1 = new TestConsumer(1);
     TestConsumer testConsumer2 = new TestConsumer(1);
 
-    assertThat(kafkaBrokerApi.topicSubscribers()).isEmpty();
-    assertThat(kafkaBrokerApi.topicSubscribersWithGroupId()).isEmpty();
-    kafkaBrokerApi.receiveAsync(testTopic, testConsumer1);
-    kafkaBrokerApi.receiveAsync(testTopic, groupId, testConsumer2);
-    assertThat(kafkaBrokerApi.topicSubscribers())
+    assertThat(kafkaBrokerApi.topicSubscribersWithContext()).isEmpty();
+    assertThat(kafkaBrokerApi.topicSubscribersWithContextAndGroupId()).isEmpty();
+    kafkaBrokerApi.receiveAsyncWithContext(testTopic, testConsumer1);
+    kafkaBrokerApi.receiveAsyncWithContext(testTopic, groupId, testConsumer2);
+    assertThat(kafkaBrokerApi.topicSubscribersWithContext())
         .containsExactly(topicSubscriber(testTopic, testConsumer1));
 
-    assertThat(kafkaBrokerApi.topicSubscribersWithGroupId())
+    assertThat(kafkaBrokerApi.topicSubscribersWithContextAndGroupId())
         .containsExactly(
             topicSubscriberWithGroupId(groupId, topicSubscriber(testTopic, testConsumer2)));
   }
@@ -421,12 +423,12 @@ public class KafkaBrokerApiTest {
     String groupId = "group_id_1";
     TestConsumer testConsumer = new TestConsumer(1);
 
-    assertThat(kafkaBrokerApi.topicSubscribers()).isEmpty();
-    assertThat(kafkaBrokerApi.topicSubscribersWithGroupId()).isEmpty();
-    kafkaBrokerApi.receiveAsync(testTopic, groupId, testConsumer);
-    kafkaBrokerApi.receiveAsync(testTopic, groupId, testConsumer);
-    assertThat(kafkaBrokerApi.topicSubscribers()).isEmpty();
-    assertThat(kafkaBrokerApi.topicSubscribersWithGroupId())
+    assertThat(kafkaBrokerApi.topicSubscribersWithContext()).isEmpty();
+    assertThat(kafkaBrokerApi.topicSubscribersWithContextAndGroupId()).isEmpty();
+    kafkaBrokerApi.receiveAsyncWithContext(testTopic, groupId, testConsumer);
+    kafkaBrokerApi.receiveAsyncWithContext(testTopic, groupId, testConsumer);
+    assertThat(kafkaBrokerApi.topicSubscribersWithContext()).isEmpty();
+    assertThat(kafkaBrokerApi.topicSubscribersWithContextAndGroupId())
         .containsExactly(
             topicSubscriberWithGroupId(groupId, topicSubscriber(testTopic, testConsumer)));
   }

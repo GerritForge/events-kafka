@@ -12,8 +12,8 @@
 package com.gerritforge.gerrit.plugins.kafka;
 
 import com.gerritforge.gerrit.eventbroker.BrokerApi;
-import com.gerritforge.gerrit.eventbroker.TopicSubscriber;
-import com.gerritforge.gerrit.eventbroker.TopicSubscriberWithGroupId;
+import com.gerritforge.gerrit.eventbroker.TopicSubscriberWithContext;
+import com.gerritforge.gerrit.eventbroker.TopicSubscriberWithContextWithGroupId;
 import com.gerritforge.gerrit.plugins.kafka.publish.KafkaPublisher;
 import com.google.gerrit.extensions.events.LifecycleListener;
 import com.google.inject.Inject;
@@ -24,15 +24,15 @@ import java.util.Set;
 public class Manager implements LifecycleListener {
 
   private final KafkaPublisher publisher;
-  private final Set<TopicSubscriber> consumers;
-  private final Set<TopicSubscriberWithGroupId> consumersWithGroupId;
+  private final Set<TopicSubscriberWithContext> consumers;
+  private final Set<TopicSubscriberWithContextWithGroupId> consumersWithGroupId;
   private final BrokerApi brokerApi;
 
   @Inject
   public Manager(
       KafkaPublisher publisher,
-      Set<TopicSubscriber> consumers,
-      Set<TopicSubscriberWithGroupId> consumersWithGroupId,
+      Set<TopicSubscriberWithContext> consumers,
+      Set<TopicSubscriberWithContextWithGroupId> consumersWithGroupId,
       BrokerApi brokerApi) {
     this.publisher = publisher;
     this.consumers = consumers;
@@ -45,15 +45,17 @@ public class Manager implements LifecycleListener {
     publisher.start();
     consumers.forEach(
         topicSubscriber ->
-            brokerApi.receiveAsync(topicSubscriber.topic(), topicSubscriber.consumer()));
+            brokerApi.receiveAsyncWithContext(
+                topicSubscriber.topic(), topicSubscriber.contextAwareConsumer()));
 
     consumersWithGroupId.forEach(
         topicSubscriberWithGroupId -> {
-          TopicSubscriber topicSubscriber = topicSubscriberWithGroupId.topicSubscriber();
-          brokerApi.receiveAsync(
+          TopicSubscriberWithContext topicSubscriber =
+              topicSubscriberWithGroupId.topicSubscriberWithContext();
+          brokerApi.receiveAsyncWithContext(
               topicSubscriber.topic(),
               topicSubscriberWithGroupId.groupId(),
-              topicSubscriber.consumer());
+              topicSubscriber.contextAwareConsumer());
         });
   }
 
