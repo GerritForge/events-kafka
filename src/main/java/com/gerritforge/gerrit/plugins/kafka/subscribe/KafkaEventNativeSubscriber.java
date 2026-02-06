@@ -12,22 +12,28 @@ package com.gerritforge.gerrit.plugins.kafka.subscribe;
 
 import static java.nio.charset.StandardCharsets.UTF_8;
 
+import com.gerritforge.gerrit.eventbroker.ContextAwareConsumer;
+import com.gerritforge.gerrit.eventbroker.MessageContext;
+import com.gerritforge.gerrit.plugins.kafka.broker.ConsumerExecutor;
+import com.gerritforge.gerrit.plugins.kafka.config.KafkaSubscriberProperties;
 import com.google.common.flogger.FluentLogger;
 import com.google.gerrit.server.events.Event;
 import com.google.gerrit.server.util.ManualRequestContext;
 import com.google.gerrit.server.util.OneOffRequestContext;
 import com.google.inject.Inject;
 import com.google.inject.assistedinject.Assisted;
-import com.gerritforge.gerrit.plugins.kafka.broker.ConsumerExecutor;
-import com.gerritforge.gerrit.plugins.kafka.config.KafkaSubscriberProperties;
 import java.time.Duration;
 import java.util.Collections;
+import java.util.Map;
 import java.util.Optional;
 import java.util.Random;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.atomic.AtomicBoolean;
 import org.apache.kafka.clients.consumer.Consumer;
+import org.apache.kafka.clients.consumer.ConsumerConfig;
 import org.apache.kafka.clients.consumer.ConsumerRecords;
+import org.apache.kafka.clients.consumer.OffsetAndMetadata;
+import org.apache.kafka.common.TopicPartition;
 import org.apache.kafka.common.errors.WakeupException;
 import org.apache.kafka.common.serialization.Deserializer;
 
@@ -44,8 +50,10 @@ public class KafkaEventNativeSubscriber implements KafkaEventSubscriber {
   private final KafkaEventSubscriberMetrics subscriberMetrics;
   private final KafkaConsumerFactory consumerFactory;
   private final Deserializer<byte[]> keyDeserializer;
+  private final boolean autoCommitEnabled;
 
   private java.util.function.Consumer<Event> messageProcessor;
+  private ContextAwareConsumer<Event> contextAwareMessageProcessor;
   private String topic;
   private AtomicBoolean resetOffset = new AtomicBoolean(false);
 
@@ -72,6 +80,9 @@ public class KafkaEventNativeSubscriber implements KafkaEventSubscriber {
     this.externalGroupId = externalGroupId;
     this.configuration = (KafkaSubscriberProperties) configuration.clone();
     externalGroupId.ifPresent(gid -> this.configuration.setProperty("group.id", gid));
+    this.autoCommitEnabled =
+        Boolean.parseBoolean(
+            this.configuration.getProperty(ConsumerConfig.ENABLE_AUTO_COMMIT_CONFIG, "true"));
   }
 
   /* (non-Javadoc)
@@ -81,6 +92,18 @@ public class KafkaEventNativeSubscriber implements KafkaEventSubscriber {
   public void subscribe(String topic, java.util.function.Consumer<Event> messageProcessor) {
     this.topic = topic;
     this.messageProcessor = messageProcessor;
+    this.contextAwareMessageProcessor = (event, ctx) -> messageProcessor.accept(event);
+    logger.atInfo().log(
+        "Kafka consumer subscribing to topic alias [%s] for event topic [%s] with groupId [%s]",
+        topic, topic, configuration.getGroupId());
+    runReceiver(consumerFactory.create(configuration, keyDeserializer));
+  }
+
+  @Override
+  public void subscribe(String topic, ContextAwareConsumer<Event> messageProcessor) {
+    this.topic = topic;
+    this.contextAwareMessageProcessor = messageProcessor;
+    this.messageProcessor = event -> messageProcessor.accept(event, () -> {});
     logger.atInfo().log(
         "Kafka consumer subscribing to topic alias [%s] for event topic [%s] with groupId [%s]",
         topic, topic, configuration.getGroupId());
@@ -138,6 +161,31 @@ public class KafkaEventNativeSubscriber implements KafkaEventSubscriber {
     return externalGroupId;
   }
 
+  private static class CommitTrackingContext implements MessageContext {
+    private final Consumer<byte[], byte[]> consumer;
+    private final TopicPartition tp;
+    private final long nextOffset;
+    private final AtomicBoolean committed = new AtomicBoolean(false);
+
+    private CommitTrackingContext(
+        Consumer<byte[], byte[]> consumer, TopicPartition tp, long nextOffset) {
+      this.consumer = consumer;
+      this.tp = tp;
+      this.nextOffset = nextOffset;
+    }
+
+    @Override
+    public void commit() {
+      if (committed.compareAndSet(false, true)) {
+        consumer.commitSync(Map.of(tp, new OffsetAndMetadata(nextOffset)));
+      }
+    }
+
+    private boolean isCommitted() {
+      return committed.get();
+    }
+  }
+
   private class ReceiverJob implements Runnable {
     private final Consumer<byte[], byte[]> consumer;
 
@@ -177,7 +225,15 @@ public class KafkaEventNativeSubscriber implements KafkaEventSubscriber {
                 try (ManualRequestContext ctx = oneOffCtx.open()) {
                   Event event =
                       valueDeserializer.deserialize(consumerRecord.topic(), consumerRecord.value());
-                  messageProcessor.accept(event);
+                  TopicPartition tp =
+                      new TopicPartition(consumerRecord.topic(), consumerRecord.partition());
+                  long nextOffset = consumerRecord.offset() + 1;
+                  CommitTrackingContext messageContext =
+                      new CommitTrackingContext(consumer, tp, nextOffset);
+                  contextAwareMessageProcessor.accept(event, messageContext);
+                  if (!autoCommitEnabled && !messageContext.isCommitted()) {
+                    messageContext.commit();
+                  }
                 } catch (Exception e) {
                   logger.atSevere().withCause(e).log(
                       "Malformed event '%s': [Exception: %s]",
