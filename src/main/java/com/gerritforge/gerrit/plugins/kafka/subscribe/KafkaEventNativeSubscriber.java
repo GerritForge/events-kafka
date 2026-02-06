@@ -12,22 +12,27 @@ package com.gerritforge.gerrit.plugins.kafka.subscribe;
 
 import static java.nio.charset.StandardCharsets.UTF_8;
 
+import com.gerritforge.gerrit.eventbroker.MessageContext;
+import com.gerritforge.gerrit.plugins.kafka.broker.ConsumerExecutor;
+import com.gerritforge.gerrit.plugins.kafka.config.KafkaSubscriberProperties;
 import com.google.common.flogger.FluentLogger;
 import com.google.gerrit.server.events.Event;
 import com.google.gerrit.server.util.ManualRequestContext;
 import com.google.gerrit.server.util.OneOffRequestContext;
 import com.google.inject.Inject;
 import com.google.inject.assistedinject.Assisted;
-import com.gerritforge.gerrit.plugins.kafka.broker.ConsumerExecutor;
-import com.gerritforge.gerrit.plugins.kafka.config.KafkaSubscriberProperties;
 import java.time.Duration;
 import java.util.Collections;
+import java.util.Map;
 import java.util.Optional;
 import java.util.Random;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.function.BiConsumer;
 import org.apache.kafka.clients.consumer.Consumer;
 import org.apache.kafka.clients.consumer.ConsumerRecords;
+import org.apache.kafka.clients.consumer.OffsetAndMetadata;
+import org.apache.kafka.common.TopicPartition;
 import org.apache.kafka.common.errors.WakeupException;
 import org.apache.kafka.common.serialization.Deserializer;
 
@@ -46,6 +51,7 @@ public class KafkaEventNativeSubscriber implements KafkaEventSubscriber {
   private final Deserializer<byte[]> keyDeserializer;
 
   private java.util.function.Consumer<Event> messageProcessor;
+  private BiConsumer<Event, MessageContext> messageProcessorWithContext;
   private String topic;
   private AtomicBoolean resetOffset = new AtomicBoolean(false);
 
@@ -72,6 +78,9 @@ public class KafkaEventNativeSubscriber implements KafkaEventSubscriber {
     this.externalGroupId = externalGroupId;
     this.configuration = (KafkaSubscriberProperties) configuration.clone();
     externalGroupId.ifPresent(gid -> this.configuration.setProperty("group.id", gid));
+    if (this.configuration.isManualCommitEnabled()) {
+      this.configuration.setProperty("enable.auto.commit", "false");
+    }
   }
 
   /* (non-Javadoc)
@@ -81,6 +90,19 @@ public class KafkaEventNativeSubscriber implements KafkaEventSubscriber {
   public void subscribe(String topic, java.util.function.Consumer<Event> messageProcessor) {
     this.topic = topic;
     this.messageProcessor = messageProcessor;
+    this.messageProcessorWithContext = (event, context) -> this.messageProcessor.accept(event);
+    logger.atInfo().log(
+        "Kafka consumer subscribing to topic alias [%s] for event topic [%s] with groupId [%s]",
+        topic, topic, configuration.getGroupId());
+    runReceiver(consumerFactory.create(configuration, keyDeserializer));
+  }
+
+  @Override
+  public void subscribe(String topic, BiConsumer<Event, MessageContext> messageProcessor) {
+    this.topic = topic;
+    this.messageProcessorWithContext = messageProcessor;
+    this.messageProcessor =
+        event -> this.messageProcessorWithContext.accept(event, MessageContext.noop());
     logger.atInfo().log(
         "Kafka consumer subscribing to topic alias [%s] for event topic [%s] with groupId [%s]",
         topic, topic, configuration.getGroupId());
@@ -177,7 +199,8 @@ public class KafkaEventNativeSubscriber implements KafkaEventSubscriber {
                 try (ManualRequestContext ctx = oneOffCtx.open()) {
                   Event event =
                       valueDeserializer.deserialize(consumerRecord.topic(), consumerRecord.value());
-                  messageProcessor.accept(event);
+                  MessageContext context = createMessageContext(consumer, consumerRecord);
+                  messageProcessorWithContext.accept(event, context);
                 } catch (Exception e) {
                   logger.atSevere().withCause(e).log(
                       "Malformed event '%s': [Exception: %s]",
@@ -210,6 +233,50 @@ public class KafkaEventNativeSubscriber implements KafkaEventSubscriber {
               + new Random().nextInt(DELAY_RECONNECT_AFTER_FAILURE_MSEC);
       Thread.sleep(reconnectDelay);
       runReceiver(consumerFactory.create(configuration, keyDeserializer));
+    }
+  }
+
+  private MessageContext createMessageContext(
+      Consumer<byte[], byte[]> consumer,
+      org.apache.kafka.clients.consumer.ConsumerRecord<byte[], byte[]> consumerRecord) {
+    if (!configuration.isManualCommitEnabled()) {
+      return MessageContext.noop();
+    }
+    return new KafkaCommitContext(consumer, consumerRecord);
+  }
+
+  private static class KafkaCommitContext implements MessageContext {
+    private final Consumer<byte[], byte[]> consumer;
+    private final org.apache.kafka.clients.consumer.ConsumerRecord<byte[], byte[]> record;
+
+    private KafkaCommitContext(
+        Consumer<byte[], byte[]> consumer,
+        org.apache.kafka.clients.consumer.ConsumerRecord<byte[], byte[]> record) {
+      this.consumer = consumer;
+      this.record = record;
+    }
+
+    @Override
+    public boolean isCommitSupported() {
+      return true;
+    }
+
+    @Override
+    public void commit() {
+      Map<TopicPartition, OffsetAndMetadata> offsets =
+          Collections.singletonMap(
+              new TopicPartition(record.topic(), record.partition()),
+              new OffsetAndMetadata(record.offset() + 1));
+      consumer.commitSync(offsets);
+    }
+
+    @Override
+    public void commitAsync() {
+      Map<TopicPartition, OffsetAndMetadata> offsets =
+          Collections.singletonMap(
+              new TopicPartition(record.topic(), record.partition()),
+              new OffsetAndMetadata(record.offset() + 1));
+      consumer.commitAsync(offsets, null);
     }
   }
 }

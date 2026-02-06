@@ -11,8 +11,10 @@
 
 package com.gerritforge.gerrit.plugins.kafka.subscribe;
 
+import com.gerritforge.gerrit.eventbroker.MessageContext;
 import com.google.gerrit.server.events.Event;
 import java.util.Optional;
+import java.util.function.BiConsumer;
 
 /** Generic interface to a Kafka topic subscriber. */
 public interface KafkaEventSubscriber {
@@ -28,6 +30,18 @@ public interface KafkaEventSubscriber {
    * @param messageProcessor consumer function for processing incoming messages
    */
   void subscribe(String topic, java.util.function.Consumer<Event> messageProcessor);
+
+  /**
+   * Subscribe to a topic and receive messages asynchronously with message context.
+   *
+   * <p>Default implementation preserves existing behavior and provides a no-op context.
+   *
+   * @param topic Kafka topic name
+   * @param messageProcessor consumer function for processing incoming messages with context
+   */
+  default void subscribe(String topic, BiConsumer<Event, MessageContext> messageProcessor) {
+    subscribe(topic, event -> messageProcessor.accept(event, MessageContext.noop()));
+  }
 
   /** Shutdown Kafka consumer. */
   void shutdown();

@@ -13,6 +13,7 @@ package com.gerritforge.gerrit.plugins.kafka.config;
 
 import com.google.common.annotations.VisibleForTesting;
 import com.google.gerrit.extensions.annotations.PluginName;
+import com.google.gerrit.server.config.PluginConfig;
 import com.google.gerrit.server.config.PluginConfigFactory;
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
@@ -22,21 +23,27 @@ public class KafkaSubscriberProperties extends KafkaProperties {
   private static final long serialVersionUID = 1L;
   public static final String DEFAULT_POLLING_INTERVAL_MS = "1000";
   public static final String DEFAULT_NUMBER_OF_SUBSCRIBERS = "7";
+  public static final boolean DEFAULT_MANUAL_COMMIT_ENABLED = false;
 
   private final Integer pollingInterval;
   private final String groupId;
   private final Integer numberOfSubscribers;
+  private final boolean manualCommitEnabled;
 
   @Inject
   public KafkaSubscriberProperties(
       PluginConfigFactory configFactory, @PluginName String pluginName) {
     super(configFactory, pluginName);
+    PluginConfig fromGerritConfig = configFactory.getFromGerritConfig(pluginName);
 
     this.pollingInterval =
         Integer.parseInt(getProperty("polling.interval.ms", DEFAULT_POLLING_INTERVAL_MS));
     this.groupId = getProperty("group.id");
     this.numberOfSubscribers =
         Integer.parseInt(getProperty("number.of.subscribers", DEFAULT_NUMBER_OF_SUBSCRIBERS));
+    this.manualCommitEnabled =
+        fromGerritConfig.getBoolean("manualCommit", DEFAULT_MANUAL_COMMIT_ENABLED);
+    remove("manual.commit");
   }
 
   @VisibleForTesting
@@ -58,6 +65,7 @@ public class KafkaSubscriberProperties extends KafkaProperties {
     this.pollingInterval = pollingInterval;
     this.groupId = groupId;
     this.numberOfSubscribers = numberOfSubscribers;
+    this.manualCommitEnabled = DEFAULT_MANUAL_COMMIT_ENABLED;
   }
 
   public Integer getPollingInterval() {
@@ -70,5 +78,9 @@ public class KafkaSubscriberProperties extends KafkaProperties {
 
   public Integer getNumberOfSubscribers() {
     return numberOfSubscribers;
+  }
+
+  public boolean isManualCommitEnabled() {
+    return manualCommitEnabled;
   }
 }

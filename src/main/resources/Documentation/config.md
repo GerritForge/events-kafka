@@ -48,6 +48,11 @@ Additional properties
 :	Kafka consumer group for receiving messages.
 	Default: Gerrit instance-id
 
+`plugin.@PLUGIN@.manualCommit`
+:	Enable explicit offset commits for Kafka consumers. When enabled, auto-commit is disabled
+	for subscribers and message handlers may call `MessageContext.commit()`/`commitAsync()`.
+	Default: false
+
 `plugin.@PLUGIN@.httpWireLog`
 :	Enable the HTTP wire protocol logging in error_log for all the communication with
 	the [Confluent REST-API Proxy](https://docs.confluent.io/platform/current/kafka-rest/index.html).

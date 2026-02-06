@@ -12,6 +12,10 @@ package com.gerritforge.gerrit.plugins.kafka.subscribe;
 
 import static java.nio.charset.StandardCharsets.UTF_8;
 
+import com.gerritforge.gerrit.eventbroker.MessageContext;
+import com.gerritforge.gerrit.plugins.kafka.broker.ConsumerExecutor;
+import com.gerritforge.gerrit.plugins.kafka.config.KafkaSubscriberProperties;
+import com.gerritforge.gerrit.plugins.kafka.rest.KafkaRestClient;
 import com.google.common.flogger.FluentLogger;
 import com.google.common.util.concurrent.Futures;
 import com.google.common.util.concurrent.ListenableFuture;
@@ -24,9 +28,6 @@ import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
 import com.google.inject.Inject;
 import com.google.inject.assistedinject.Assisted;
-import com.gerritforge.gerrit.plugins.kafka.broker.ConsumerExecutor;
-import com.gerritforge.gerrit.plugins.kafka.config.KafkaSubscriberProperties;
-import com.gerritforge.gerrit.plugins.kafka.rest.KafkaRestClient;
 import java.io.IOException;
 import java.io.InputStreamReader;
 import java.io.Reader;
@@ -44,6 +45,7 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
 import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.function.BiConsumer;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 import java.util.stream.StreamSupport;
@@ -62,6 +64,7 @@ public class KafkaEventRestSubscriber implements KafkaEventSubscriber {
   private static final int DELAY_RECONNECT_AFTER_FAILURE_MSEC = 1000;
   // Prefix is a length of 'rest-consumer-' string
   private static final int INSTANCE_ID_PREFIX_LEN = 14;
+
   /**
    * Suffix is a length of a unique identifier for example: '-9836fe85-d838-4722-97c9-4a7b-34e834d'
    */
@@ -77,6 +80,7 @@ public class KafkaEventRestSubscriber implements KafkaEventSubscriber {
   private final Gson gson;
 
   private java.util.function.Consumer<Event> messageProcessor;
+  private BiConsumer<Event, MessageContext> messageProcessorWithContext;
   private String topic;
   private final KafkaRestClient restClient;
   private final AtomicBoolean resetOffset;
@@ -115,6 +119,23 @@ public class KafkaEventRestSubscriber implements KafkaEventSubscriber {
   public void subscribe(String topic, java.util.function.Consumer<Event> messageProcessor) {
     this.topic = topic;
     this.messageProcessor = messageProcessor;
+    this.messageProcessorWithContext = (event, context) -> this.messageProcessor.accept(event);
+    logger.atInfo().log(
+        "Kafka consumer subscribing to topic alias [%s] for event topic [%s] with groupId [%s]",
+        topic, topic, configuration.getGroupId());
+    try {
+      runReceiver();
+    } catch (InterruptedException | ExecutionException | TimeoutException e) {
+      throw new IllegalStateException(e);
+    }
+  }
+
+  @Override
+  public void subscribe(String topic, BiConsumer<Event, MessageContext> messageProcessor) {
+    this.topic = topic;
+    this.messageProcessorWithContext = messageProcessor;
+    this.messageProcessor =
+        event -> this.messageProcessorWithContext.accept(event, MessageContext.noop());
     logger.atInfo().log(
         "Kafka consumer subscribing to topic alias [%s] for event topic [%s] with groupId [%s]",
         topic, topic, configuration.getGroupId());
@@ -218,7 +239,8 @@ public class KafkaEventRestSubscriber implements KafkaEventSubscriber {
                 try (ManualRequestContext ctx = oneOffCtx.open()) {
                   Event event =
                       valueDeserializer.deserialize(consumerRecord.topic(), consumerRecord.value());
-                  messageProcessor.accept(event);
+                  MessageContext context = createMessageContext(consumerRecord);
+                  messageProcessorWithContext.accept(event, context);
                 } catch (Exception e) {
                   logger.atSevere().withCause(e).log(
                       "Malformed event '%s'", new String(consumerRecord.value(), UTF_8));
@@ -274,7 +296,9 @@ public class KafkaEventRestSubscriber implements KafkaEventSubscriber {
     }
 
     private ListenableFuture<URI> createConsumer(String consumerGroup) {
-      HttpPost post = restClient.createPostToConsumer(consumerGroup + "-" + topic);
+      HttpPost post =
+          restClient.createPostToConsumer(
+              consumerGroup + "-" + topic, !configuration.isManualCommitEnabled());
       return restClient.mapAsync(restClient.execute(post, HttpStatus.SC_OK), this::getConsumerUri);
     }
 
@@ -367,6 +391,53 @@ public class KafkaEventRestSubscriber implements KafkaEventSubscriber {
               + new Random().nextInt(DELAY_RECONNECT_AFTER_FAILURE_MSEC);
       Thread.sleep(reconnectDelay);
       runReceiver();
+    }
+  }
+
+  private MessageContext createMessageContext(ConsumerRecord<byte[], byte[]> consumerRecord) {
+    if (!configuration.isManualCommitEnabled()) {
+      return MessageContext.noop();
+    }
+    return new KafkaRestCommitContext(consumerRecord);
+  }
+
+  private class KafkaRestCommitContext implements MessageContext {
+    private final ConsumerRecord<byte[], byte[]> record;
+
+    private KafkaRestCommitContext(ConsumerRecord<byte[], byte[]> record) {
+      this.record = record;
+    }
+
+    @Override
+    public boolean isCommitSupported() {
+      return true;
+    }
+
+    @Override
+    public void commit() {
+      commitInternal();
+    }
+
+    @Override
+    public void commitAsync() {
+      executor.execute(this::commitInternal);
+    }
+
+    private void commitInternal() {
+      try {
+        URI consumerUri =
+            receiver.kafkaRestConsumerUri.get(restClientTimeoutMs, TimeUnit.MILLISECONDS);
+        HttpPost post =
+            restClient.createPostToCommitOffsets(
+                consumerUri, topic, record.partition(), record.offset() + 1);
+        restClient
+            .execute(post, HttpStatus.SC_NO_CONTENT)
+            .get(restClientTimeoutMs, TimeUnit.MILLISECONDS);
+      } catch (InterruptedException | ExecutionException | TimeoutException e) {
+        logger.atWarning().withCause(e).log(
+            "Unable to commit offsets for topic %s partition %d offset %d",
+            topic, record.partition(), record.offset() + 1);
+      }
     }
   }
 }

@@ -13,6 +13,7 @@ package com.gerritforge.gerrit.plugins.kafka.rest;
 
 import static java.nio.charset.StandardCharsets.UTF_8;
 
+import com.gerritforge.gerrit.plugins.kafka.config.KafkaProperties;
 import com.google.common.base.Function;
 import com.google.common.flogger.FluentLogger;
 import com.google.common.net.MediaType;
@@ -23,7 +24,6 @@ import com.google.common.util.concurrent.ListenableFuture;
 import com.google.gerrit.common.Nullable;
 import com.google.inject.Inject;
 import com.google.inject.assistedinject.Assisted;
-import com.gerritforge.gerrit.plugins.kafka.config.KafkaProperties;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.net.URI;
@@ -149,6 +149,10 @@ public class KafkaRestClient {
   }
 
   public HttpPost createPostToConsumer(String consumerGroup) {
+    return createPostToConsumer(consumerGroup, true);
+  }
+
+  public HttpPost createPostToConsumer(String consumerGroup, boolean autoCommitEnabled) {
     HttpPost post =
         new HttpPost(
             resolveKafkaRestApiUri("/consumers/" + URLEncoder.encode(consumerGroup, UTF_8)));
@@ -156,7 +160,10 @@ public class KafkaRestClient {
     post.setConfig(createRequestConfig());
     post.setEntity(
         new StringEntity(
-            "{\"format\": \"json\",\"auto.offset.reset\": \"earliest\", \"auto.commit.enable\":\"true\", \"consumer.request.timeout.ms\": \"1000\"}",
+            String.format(
+                "{\"format\": \"json\",\"auto.offset.reset\": \"earliest\","
+                    + " \"auto.commit.enable\":\"%s\", \"consumer.request.timeout.ms\": \"1000\"}",
+                autoCommitEnabled),
             ContentType.create(KAFKA_V2, UTF_8)));
     return post;
   }
@@ -210,6 +217,20 @@ public class KafkaRestClient {
                         partition ->
                             String.format("{\"topic\":\"%s\",\"partition\":%d}", topic, partition))
                     .collect(Collectors.joining(","))),
+            ContentType.create(KAFKA_V2, UTF_8)));
+    return post;
+  }
+
+  public HttpPost createPostToCommitOffsets(
+      URI consumerUri, String topic, int partition, long offset) {
+    HttpPost post = new HttpPost(consumerUri.resolve(consumerUri.getPath() + "/offsets"));
+    post.addHeader(HttpHeaders.ACCEPT, "*/*");
+    post.setConfig(createRequestConfig());
+    post.setEntity(
+        new StringEntity(
+            String.format(
+                "{\"offsets\":[{\"topic\":\"%s\",\"partition\":%d,\"offset\":%d}]}",
+                topic, partition, offset),
             ContentType.create(KAFKA_V2, UTF_8)));
     return post;
   }

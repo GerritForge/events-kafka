@@ -12,19 +12,21 @@
 package com.gerritforge.gerrit.plugins.kafka.api;
 
 import com.gerritforge.gerrit.eventbroker.BrokerApi;
+import com.gerritforge.gerrit.eventbroker.MessageContext;
 import com.gerritforge.gerrit.eventbroker.TopicSubscriber;
 import com.gerritforge.gerrit.eventbroker.TopicSubscriberWithGroupId;
+import com.gerritforge.gerrit.plugins.kafka.publish.KafkaPublisher;
+import com.gerritforge.gerrit.plugins.kafka.subscribe.KafkaEventSubscriber;
 import com.google.common.util.concurrent.ListenableFuture;
 import com.google.gerrit.common.Nullable;
 import com.google.gerrit.server.events.Event;
 import com.google.inject.Inject;
-import com.gerritforge.gerrit.plugins.kafka.publish.KafkaPublisher;
-import com.gerritforge.gerrit.plugins.kafka.subscribe.KafkaEventSubscriber;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
 import java.util.Set;
+import java.util.function.BiConsumer;
 import java.util.function.Consumer;
 import java.util.stream.Collectors;
 
@@ -54,6 +56,17 @@ public class KafkaBrokerApi implements BrokerApi {
 
   @Override
   public void receiveAsync(String topic, String groupId, Consumer<Event> eventConsumer) {
+    receiveAsync(topic, eventConsumer, Optional.ofNullable(groupId));
+  }
+
+  @Override
+  public void receiveAsync(String topic, BiConsumer<Event, MessageContext> eventConsumer) {
+    receiveAsync(topic, eventConsumer, Optional.empty());
+  }
+
+  @Override
+  public void receiveAsync(
+      String topic, String groupId, BiConsumer<Event, MessageContext> eventConsumer) {
     receiveAsync(topic, eventConsumer, Optional.ofNullable(groupId));
   }
 
@@ -106,6 +119,17 @@ public class KafkaBrokerApi implements BrokerApi {
 
   private void receiveAsync(
       String topic, Consumer<Event> eventConsumer, Optional<String> externalGroupId) {
+    KafkaEventSubscriber subscriber = kafkaEventSubscriberFactory.create(externalGroupId);
+    synchronized (subscribers) {
+      subscribers.add(subscriber);
+    }
+    subscriber.subscribe(topic, eventConsumer);
+  }
+
+  private void receiveAsync(
+      String topic,
+      BiConsumer<Event, MessageContext> eventConsumer,
+      Optional<String> externalGroupId) {
     KafkaEventSubscriber subscriber = kafkaEventSubscriberFactory.create(externalGroupId);
     synchronized (subscribers) {
       subscribers.add(subscriber);
