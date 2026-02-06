@@ -42,6 +42,9 @@ Additional properties
     - `REST` for using a simple HTTP client to connect to
       [Confluent REST-API Proxy](https://docs.confluent.io/platform/current/kafka-rest/index.html).
       **NOTE**: `plugin.@PLUGIN@.restApiUri` is mandatory when using a `REST` client type.
+      **NOTE**: explicit offset commits are supported only by the `NATIVE` client type.
+      With the `REST` client type, consumed messages are acknowledged automatically by the
+      REST proxy.
 	Default: `NATIVE`
 
 `plugin.@PLUGIN@.groupId`
@@ -57,6 +60,13 @@ Additional properties
 `plugin.@PLUGIN@.pollingIntervalMs`
 :	Polling interval in msec for receiving messages from Kafka topic subscription.
 	Default: 1000
+
+`plugin.@PLUGIN@.enableAutoCommit`
+:	Enable automatic offset commits for consumed messages.
+	When set to `false`, consumers can explicitly acknowledge messages by calling `ack()`.
+	Explicit acknowledgements are supported only by the `NATIVE` client type. The `REST`
+	client type always uses automatic acknowledgement.
+	Default: true
 
 `plugin.@PLUGIN@.numberOfSubscribers`
 :   The number of consumers that are expected to be executed. This number will
