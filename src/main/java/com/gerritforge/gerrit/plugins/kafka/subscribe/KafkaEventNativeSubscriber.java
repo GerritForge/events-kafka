@@ -12,6 +12,8 @@ package com.gerritforge.gerrit.plugins.kafka.subscribe;
 
 import static java.nio.charset.StandardCharsets.UTF_8;
 
+import com.gerritforge.gerrit.eventbroker.AckAwareConsumer;
+import com.gerritforge.gerrit.eventbroker.MessageAcknowledgementException;
 import com.gerritforge.gerrit.plugins.kafka.broker.ConsumerExecutor;
 import com.gerritforge.gerrit.plugins.kafka.config.KafkaSubscriberProperties;
 import com.google.common.flogger.FluentLogger;
@@ -22,12 +24,18 @@ import com.google.inject.Inject;
 import com.google.inject.assistedinject.Assisted;
 import java.time.Duration;
 import java.util.Collections;
+import java.util.HashMap;
+import java.util.Map;
 import java.util.Optional;
 import java.util.Random;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.atomic.AtomicBoolean;
 import org.apache.kafka.clients.consumer.Consumer;
+import org.apache.kafka.clients.consumer.ConsumerRecord;
 import org.apache.kafka.clients.consumer.ConsumerRecords;
+import org.apache.kafka.clients.consumer.OffsetAndMetadata;
+import org.apache.kafka.common.KafkaException;
+import org.apache.kafka.common.TopicPartition;
 import org.apache.kafka.common.errors.WakeupException;
 import org.apache.kafka.common.serialization.Deserializer;
 
@@ -45,7 +53,7 @@ public class KafkaEventNativeSubscriber implements KafkaEventSubscriber {
   private final KafkaConsumerFactory consumerFactory;
   private final Deserializer<byte[]> keyDeserializer;
 
-  private java.util.function.Consumer<Event> messageProcessor;
+  private AckAwareConsumer<Event> messageProcessor;
   private String topic;
   private AtomicBoolean resetOffset = new AtomicBoolean(false);
 
@@ -75,12 +83,12 @@ public class KafkaEventNativeSubscriber implements KafkaEventSubscriber {
   }
 
   /* (non-Javadoc)
-   * @see com.gerritforge.gerrit.plugins.kafka.subscribe.KafkaEventSubscriber#subscribe(java.lang.String, java.util.function.Consumer)
+   * @see com.gerritforge.gerrit.plugins.kafka.subscribe.KafkaEventSubscriber#subscribe(java.lang.String, AckAwareConsumer)
    */
   @Override
-  public void subscribe(String topic, java.util.function.Consumer<Event> messageProcessor) {
+  public void subscribe(String topic, AckAwareConsumer<Event> acknowledgementConsumer) {
     this.topic = topic;
-    this.messageProcessor = messageProcessor;
+    this.messageProcessor = acknowledgementConsumer;
     logger.atInfo().log(
         "Kafka consumer subscribing to topic alias [%s] for event topic [%s] with groupId [%s]",
         topic, topic, configuration.getGroupId());
@@ -113,7 +121,7 @@ public class KafkaEventNativeSubscriber implements KafkaEventSubscriber {
    * @see com.gerritforge.gerrit.plugins.kafka.subscribe.KafkaEventSubscriber#getMessageProcessor()
    */
   @Override
-  public java.util.function.Consumer<Event> getMessageProcessor() {
+  public AckAwareConsumer<Event> getMessageProcessor() {
     return messageProcessor;
   }
 
@@ -140,6 +148,7 @@ public class KafkaEventNativeSubscriber implements KafkaEventSubscriber {
 
   private class ReceiverJob implements Runnable {
     private final Consumer<byte[], byte[]> consumer;
+    private final HashMap<Event, ConsumerRecord<byte[], byte[]>> ackRecords = new HashMap<>();
 
     public ReceiverJob(Consumer<byte[], byte[]> consumer) {
       this.consumer = consumer;
@@ -155,6 +164,24 @@ public class KafkaEventNativeSubscriber implements KafkaEventSubscriber {
         consume();
       } catch (Exception e) {
         logger.atSevere().withCause(e).log("Consumer loop of topic %s ended", topic);
+      }
+    }
+
+    private void kafkaAck(Event event) {
+      ConsumerRecord<byte[], byte[]> consumerRecord = ackRecords.get(event);
+      if (consumerRecord == null) {
+        throw new MessageAcknowledgementException("Invalid or already acked Event");
+      }
+
+      TopicPartition tp = new TopicPartition(consumerRecord.topic(), consumerRecord.partition());
+      long offset = consumerRecord.offset() + 1;
+      try {
+        consumer.commitSync(Map.of(tp, new OffsetAndMetadata(offset)));
+        logger.atFine().log("Committed offset %d on %s", offset, tp);
+        ackRecords.remove(event);
+      } catch (KafkaException e) {
+        throw new MessageAcknowledgementException(
+            String.format("Failed to acknowledge offset %d on %s", offset, tp), e);
       }
     }
 
@@ -177,7 +204,12 @@ public class KafkaEventNativeSubscriber implements KafkaEventSubscriber {
                 try (ManualRequestContext ctx = oneOffCtx.open()) {
                   Event event =
                       valueDeserializer.deserialize(consumerRecord.topic(), consumerRecord.value());
-                  messageProcessor.accept(event);
+                  ackRecords.put(event, consumerRecord);
+                  messageProcessor.accept(
+                      event,
+                      configuration.isAutoCommitEnabled()
+                          ? KafkaAutoAcknowledgement.INSTANCE
+                          : this::kafkaAck);
                 } catch (Exception e) {
                   logger.atSevere().withCause(e).log(
                       "Malformed event '%s': [Exception: %s]",
