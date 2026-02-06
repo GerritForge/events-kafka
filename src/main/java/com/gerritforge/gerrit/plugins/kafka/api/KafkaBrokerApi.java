@@ -12,7 +12,10 @@
 package com.gerritforge.gerrit.plugins.kafka.api;
 
 import com.gerritforge.gerrit.eventbroker.BrokerApi;
+import com.gerritforge.gerrit.eventbroker.ContextAwareConsumer;
 import com.gerritforge.gerrit.eventbroker.TopicSubscriber;
+import com.gerritforge.gerrit.eventbroker.TopicSubscriberWithContext;
+import com.gerritforge.gerrit.eventbroker.TopicSubscriberWithContextWithGroupId;
 import com.gerritforge.gerrit.eventbroker.TopicSubscriberWithGroupId;
 import com.gerritforge.gerrit.plugins.kafka.publish.KafkaPublisher;
 import com.gerritforge.gerrit.plugins.kafka.subscribe.KafkaEventSubscriber;
@@ -49,12 +52,47 @@ public class KafkaBrokerApi implements BrokerApi {
 
   @Override
   public void receiveAsync(String topic, Consumer<Event> eventConsumer) {
-    receiveAsync(topic, eventConsumer, Optional.empty());
+    legacyReceiveAsync(topic, eventConsumer, Optional.empty());
   }
 
   @Override
   public void receiveAsync(String topic, String groupId, Consumer<Event> eventConsumer) {
-    receiveAsync(topic, eventConsumer, Optional.ofNullable(groupId));
+    legacyReceiveAsync(topic, eventConsumer, Optional.ofNullable(groupId));
+  }
+
+  @Override
+  public void receiveAsyncWithContext(String topic, ContextAwareConsumer<Event> eventConsumer) {
+    receiveAsyncWithContext(topic, eventConsumer, Optional.empty());
+  }
+
+  @Override
+  public Set<TopicSubscriberWithContext> topicSubscribersWithContext() {
+    return subscribers.stream()
+        .filter(s -> s.getExternalGroupId().isEmpty())
+        .map(
+            s ->
+                TopicSubscriberWithContext.topicSubscriber(
+                    s.getTopic(), s.contextAwareMessageProcessor()))
+        .collect(Collectors.toSet());
+  }
+
+  @Override
+  public Set<TopicSubscriberWithContextWithGroupId> topicSubscribersWithContextAndGroupId() {
+    return subscribers.stream()
+        .filter(s -> s.getExternalGroupId().isPresent())
+        .map(
+            s ->
+                TopicSubscriberWithContextWithGroupId.topicSubscriberWithGroupId(
+                    s.getExternalGroupId().get(),
+                    TopicSubscriberWithContext.topicSubscriber(
+                        s.getTopic(), s.contextAwareMessageProcessor())))
+        .collect(Collectors.toSet());
+  }
+
+  @Override
+  public void receiveAsyncWithContext(
+      String topic, String groupId, ContextAwareConsumer<Event> eventConsumer) {
+    receiveAsyncWithContext(topic, eventConsumer, Optional.ofNullable(groupId));
   }
 
   @Override
@@ -104,12 +142,23 @@ public class KafkaBrokerApi implements BrokerApi {
         .forEach(subscriber -> subscriber.resetOffset());
   }
 
-  private void receiveAsync(
-      String topic, Consumer<Event> eventConsumer, Optional<String> externalGroupId) {
+  private void receiveAsyncWithContext(
+      String topic, ContextAwareConsumer<Event> eventConsumer, Optional<String> externalGroupId) {
     KafkaEventSubscriber subscriber = kafkaEventSubscriberFactory.create(externalGroupId);
     synchronized (subscribers) {
       subscribers.add(subscriber);
     }
     subscriber.subscribe(topic, eventConsumer);
+  }
+
+  private void legacyReceiveAsync(
+      String topic, Consumer<Event> eventConsumer, Optional<String> externalGroupId) {
+    ContextAwareConsumer<Event> eventContextAwareConsumer;
+    eventContextAwareConsumer = (event, ctx) -> eventConsumer.accept(event);
+    KafkaEventSubscriber subscriber = kafkaEventSubscriberFactory.create(externalGroupId);
+    synchronized (subscribers) {
+      subscribers.add(subscriber);
+    }
+    subscriber.subscribe(topic, eventContextAwareConsumer);
   }
 }

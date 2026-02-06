@@ -12,8 +12,8 @@
 package com.gerritforge.gerrit.plugins.kafka.api;
 
 import com.gerritforge.gerrit.eventbroker.BrokerApi;
-import com.gerritforge.gerrit.eventbroker.TopicSubscriber;
-import com.gerritforge.gerrit.eventbroker.TopicSubscriberWithGroupId;
+import com.gerritforge.gerrit.eventbroker.TopicSubscriberWithContext;
+import com.gerritforge.gerrit.eventbroker.TopicSubscriberWithContextWithGroupId;
 import com.gerritforge.gerrit.plugins.kafka.broker.ConsumerExecutor;
 import com.gerritforge.gerrit.plugins.kafka.config.KafkaProperties.ClientType;
 import com.gerritforge.gerrit.plugins.kafka.config.KafkaSubscriberProperties;
@@ -38,8 +38,8 @@ import org.apache.kafka.common.serialization.Deserializer;
 
 @Singleton
 public class KafkaApiModule extends LifecycleModule {
-  private Set<TopicSubscriber> activeConsumers = Sets.newHashSet();
-  private Set<TopicSubscriberWithGroupId> activeConsumersWithGroupId = Sets.newHashSet();
+  private Set<TopicSubscriberWithContext> activeConsumers = Sets.newHashSet();
+  private Set<TopicSubscriberWithContextWithGroupId> activeConsumersWithGroupId = Sets.newHashSet();
   private WorkQueue workQueue;
   private KafkaSubscriberProperties configuration;
 
@@ -52,9 +52,10 @@ public class KafkaApiModule extends LifecycleModule {
   @Inject(optional = true)
   public void setPreviousBrokerApi(DynamicItem<BrokerApi> previousBrokerApi) {
     if (previousBrokerApi != null && previousBrokerApi.get() != null) {
+      // TODO: migrate legacy TopicSubscriber → wrap into TopicSubscriberWithContext for continuity
       BrokerApi api = previousBrokerApi.get();
-      this.activeConsumersWithGroupId = api.topicSubscribersWithGroupId();
-      this.activeConsumers = api.topicSubscribers();
+      this.activeConsumersWithGroupId = api.topicSubscribersWithContextAndGroupId();
+      this.activeConsumers = api.topicSubscribersWithContext();
     }
   }
 
@@ -85,8 +86,8 @@ public class KafkaApiModule extends LifecycleModule {
 
     bind(new TypeLiteral<Deserializer<byte[]>>() {}).toInstance(new ByteArrayDeserializer());
     bind(new TypeLiteral<Deserializer<Event>>() {}).to(KafkaEventDeserializer.class);
-    bind(new TypeLiteral<Set<TopicSubscriber>>() {}).toInstance(activeConsumers);
-    bind(new TypeLiteral<Set<TopicSubscriberWithGroupId>>() {})
+    bind(new TypeLiteral<Set<TopicSubscriberWithContext>>() {}).toInstance(activeConsumers);
+    bind(new TypeLiteral<Set<TopicSubscriberWithContextWithGroupId>>() {})
         .toInstance(activeConsumersWithGroupId);
 
     DynamicItem.bind(binder(), BrokerApi.class).to(KafkaBrokerApi.class).in(Scopes.SINGLETON);
