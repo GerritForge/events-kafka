@@ -14,8 +14,12 @@ package com.gerritforge.gerrit.plugins.kafka.api;
 import static com.gerritforge.gerrit.eventbroker.TopicSubscriber.topicSubscriber;
 import static com.gerritforge.gerrit.eventbroker.TopicSubscriberWithGroupId.topicSubscriberWithGroupId;
 import static com.google.common.truth.Truth.assertThat;
+import static org.junit.Assert.assertThrows;
+import static org.junit.Assume.assumeTrue;
 import static org.mockito.Mockito.mock;
 
+import com.gerritforge.gerrit.eventbroker.AckAwareConsumer;
+import com.gerritforge.gerrit.eventbroker.MessageAcknowledgement;
 import com.gerritforge.gerrit.plugins.kafka.KafkaContainerProvider;
 import com.gerritforge.gerrit.plugins.kafka.KafkaRestContainer;
 import com.gerritforge.gerrit.plugins.kafka.config.KafkaProperties;
@@ -48,7 +52,6 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
-import java.util.function.Consumer;
 import org.apache.kafka.clients.producer.Producer;
 import org.apache.kafka.clients.producer.ProducerConfig;
 import org.junit.After;
@@ -74,6 +77,7 @@ public class KafkaBrokerApiTest {
   static String restApiUsername;
   static String restApiPassword;
 
+  static final boolean AUTO_COMMIT_ENABLED = true;
   static final int TEST_NUM_SUBSCRIBERS = 1;
   static final String TEST_GROUP_ID = KafkaBrokerApiTest.class.getName();
   static final int TEST_POLLING_INTERVAL_MSEC = 100;
@@ -88,6 +92,7 @@ public class KafkaBrokerApiTest {
   private KafkaSession session;
   private Gson gson;
   protected ClientType clientType;
+  protected boolean autoCommitEnabled;
 
   @Rule public TestName name = new TestName();
 
@@ -106,9 +111,15 @@ public class KafkaBrokerApiTest {
 
   public static class TestModule extends AbstractModule {
     private KafkaProperties kafkaProperties;
+    private boolean autoCommitEnabled;
 
     public TestModule(KafkaProperties kafkaProperties) {
+      this(kafkaProperties, AUTO_COMMIT_ENABLED);
+    }
+
+    public TestModule(KafkaProperties kafkaProperties, boolean autoCommitEnabled) {
       this.kafkaProperties = kafkaProperties;
+      this.autoCommitEnabled = autoCommitEnabled;
     }
 
     @Override
@@ -135,16 +146,30 @@ public class KafkaBrokerApiTest {
       bind(new TypeLiteral<Producer<String, String>>() {}).toProvider(KafkaProducerProvider.class);
       KafkaSubscriberProperties kafkaSubscriberProperties =
           new KafkaSubscriberProperties(
-              TEST_POLLING_INTERVAL_MSEC, TEST_GROUP_ID, TEST_NUM_SUBSCRIBERS, ClientType.NATIVE);
+              TEST_POLLING_INTERVAL_MSEC,
+              TEST_GROUP_ID,
+              TEST_NUM_SUBSCRIBERS,
+              ClientType.NATIVE,
+              autoCommitEnabled,
+              null,
+              null,
+              null);
       bind(KafkaSubscriberProperties.class).toInstance(kafkaSubscriberProperties);
     }
   }
 
-  public static class TestConsumer implements Consumer<Event> {
+  public static class TestConsumer implements AckAwareConsumer<Event> {
     public final List<Event> messages = new ArrayList<>();
+    public int acknowledgedMessages;
+    private final boolean autoCommitEnabled;
     private CountDownLatch[] locks;
 
     public TestConsumer(int numMessagesExpected) {
+      this(numMessagesExpected, AUTO_COMMIT_ENABLED);
+    }
+
+    public TestConsumer(int numMessagesExpected, boolean autoCommitEnabled) {
+      this.autoCommitEnabled = autoCommitEnabled;
       resetExpectedMessages(numMessagesExpected);
     }
 
@@ -156,8 +181,12 @@ public class KafkaBrokerApiTest {
     }
 
     @Override
-    public void accept(Event message) {
+    public void accept(Event message, MessageAcknowledgement messageAcknowledgement) {
       messages.add(message);
+      if (!autoCommitEnabled) {
+        messageAcknowledgement.ack();
+        acknowledgedMessages++;
+      }
       for (CountDownLatch countDownLatch : locks) {
         countDownLatch.countDown();
       }
@@ -195,6 +224,7 @@ public class KafkaBrokerApiTest {
   @Before
   public void setup() {
     clientType = ClientType.NATIVE;
+    autoCommitEnabled = AUTO_COMMIT_ENABLED;
   }
 
   @AfterClass
@@ -216,7 +246,28 @@ public class KafkaBrokerApiTest {
   }
 
   protected TestModule newTestModule(KafkaProperties kafkaProperties) {
-    return new TestModule(kafkaProperties);
+    return new TestModule(kafkaProperties, autoCommitEnabled);
+  }
+
+  @Test
+  public void shouldFailWhenManualAckIsConfiguredWithRestClient() {
+    IllegalArgumentException thrown =
+        assertThrows(
+            IllegalArgumentException.class,
+            () ->
+                new KafkaSubscriberProperties(
+                    TEST_POLLING_INTERVAL_MSEC,
+                    TEST_GROUP_ID,
+                    TEST_NUM_SUBSCRIBERS,
+                    ClientType.REST,
+                    !AUTO_COMMIT_ENABLED,
+                    getKafkaRestApiUriString(),
+                    restApiUsername,
+                    restApiPassword));
+
+    assertThat(thrown)
+        .hasMessageThat()
+        .contains("enableAutoCommit=false is not supported when clientType=REST");
   }
 
   public void connectToKafka(KafkaProperties kafkaProperties) {
@@ -259,6 +310,27 @@ public class KafkaBrokerApiTest {
     assertThat(gson.toJson(testConsumer.messages.get(0))).isEqualTo(gson.toJson(testEventMessage));
 
     assertNoMoreExpectedMessages(testConsumer);
+  }
+
+  @Test
+  public void shouldAckMessageWhenAutoCommitIsDisabled() {
+    assumeTrue(clientType == ClientType.NATIVE);
+    autoCommitEnabled = false;
+    connectToKafka(
+        new KafkaProperties(
+            false, clientType, getKafkaRestApiUriString(), restApiUsername, restApiPassword));
+    KafkaBrokerApi kafkaBrokerApi = injector.getInstance(KafkaBrokerApi.class);
+    String testTopic = testTopic();
+    TestConsumer testConsumer = new TestConsumer(1, !AUTO_COMMIT_ENABLED);
+    Event testEventMessage = new ProjectCreatedEvent();
+    testEventMessage.instanceId = TEST_INSTANCE_ID;
+
+    kafkaBrokerApi.receiveAsync(testTopic, testConsumer);
+    kafkaBrokerApi.send(testTopic, testEventMessage);
+
+    assertThat(testConsumer.await()).isTrue();
+    assertThat(testConsumer.messages).hasSize(1);
+    assertThat(testConsumer.acknowledgedMessages).isEqualTo(1);
   }
 
   private String testTopic() {
