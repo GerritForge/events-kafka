@@ -12,6 +12,7 @@ package com.gerritforge.gerrit.plugins.kafka.subscribe;
 
 import static java.nio.charset.StandardCharsets.UTF_8;
 
+import com.gerritforge.gerrit.eventbroker.AckAwareConsumer;
 import com.gerritforge.gerrit.plugins.kafka.broker.ConsumerExecutor;
 import com.gerritforge.gerrit.plugins.kafka.config.KafkaSubscriberProperties;
 import com.google.common.flogger.FluentLogger;
@@ -45,7 +46,7 @@ public class KafkaEventNativeSubscriber implements KafkaEventSubscriber {
   private final KafkaConsumerFactory consumerFactory;
   private final Deserializer<byte[]> keyDeserializer;
 
-  private java.util.function.Consumer<Event> messageProcessor;
+  private AckAwareConsumer<Event> messageProcessor;
   private String topic;
   private AtomicBoolean resetOffset = new AtomicBoolean(false);
 
@@ -75,12 +76,12 @@ public class KafkaEventNativeSubscriber implements KafkaEventSubscriber {
   }
 
   /* (non-Javadoc)
-   * @see com.gerritforge.gerrit.plugins.kafka.subscribe.KafkaEventSubscriber#subscribe(java.lang.String, java.util.function.Consumer)
+   * @see com.gerritforge.gerrit.plugins.kafka.subscribe.KafkaEventSubscriber#subscribe(java.lang.String, AckAwareConsumer)
    */
   @Override
-  public void subscribe(String topic, java.util.function.Consumer<Event> messageProcessor) {
+  public void subscribe(String topic, AckAwareConsumer<Event> acknowledgementConsumer) {
     this.topic = topic;
-    this.messageProcessor = messageProcessor;
+    this.messageProcessor = acknowledgementConsumer;
     logger.atInfo().log(
         "Kafka consumer subscribing to topic alias [%s] for event topic [%s] with groupId [%s]",
         topic, topic, configuration.getGroupId());
@@ -113,7 +114,7 @@ public class KafkaEventNativeSubscriber implements KafkaEventSubscriber {
    * @see com.gerritforge.gerrit.plugins.kafka.subscribe.KafkaEventSubscriber#getMessageProcessor()
    */
   @Override
-  public java.util.function.Consumer<Event> getMessageProcessor() {
+  public AckAwareConsumer<Event> getMessageProcessor() {
     return messageProcessor;
   }
 
@@ -177,7 +178,11 @@ public class KafkaEventNativeSubscriber implements KafkaEventSubscriber {
                 try (ManualRequestContext ctx = oneOffCtx.open()) {
                   Event event =
                       valueDeserializer.deserialize(consumerRecord.topic(), consumerRecord.value());
-                  messageProcessor.accept(event);
+                  messageProcessor.accept(
+                      event,
+                      configuration.isAutoCommitEnabled()
+                          ? KafkaAutoAcknowledgement.INSTANCE
+                          : new KafkaAcknowledgement(consumerRecord, consumer));
                 } catch (Exception e) {
                   logger.atSevere().withCause(e).log(
                       "Malformed event '%s': [Exception: %s]",
