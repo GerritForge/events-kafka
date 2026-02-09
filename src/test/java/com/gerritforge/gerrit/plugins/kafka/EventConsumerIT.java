@@ -61,7 +61,7 @@ public class EventConsumerIT extends LightweightPluginDaemonTest {
 
       System.setProperty(ProducerConfig.BOOTSTRAP_SERVERS_CONFIG, kafka.getBootstrapServers());
     } catch (IllegalStateException e) {
-      fail("Cannot start container. Is docker daemon running?");
+      throw new AssertionError("Cannot start container.", e);
     }
 
     super.setUpTestPlugin();
