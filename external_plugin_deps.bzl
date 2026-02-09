@@ -47,8 +47,8 @@ def external_plugin_deps():
 
     maven_jar(
         name = "jna",
-        artifact = "net.java.dev.jna:jna:5.5.0",
-        sha1 = "0e0845217c4907822403912ad6828d8e0b256208",
+        artifact = "net.java.dev.jna:jna:5.18.1",
+        sha1 = "b27ba04287cc4abe769642fe8318d39fc89bf937",
     )
 
     DOCKER_JAVA_VERS = "3.2.8"
