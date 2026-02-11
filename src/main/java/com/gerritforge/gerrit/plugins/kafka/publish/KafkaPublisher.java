@@ -11,6 +11,7 @@
 
 package com.gerritforge.gerrit.plugins.kafka.publish;
 
+import com.gerritforge.gerrit.plugins.kafka.session.KafkaSession;
 import com.google.common.annotations.VisibleForTesting;
 import com.google.common.util.concurrent.ListenableFuture;
 import com.google.gerrit.server.events.Event;
@@ -20,7 +21,6 @@ import com.google.gson.Gson;
 import com.google.gson.JsonObject;
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
-import com.gerritforge.gerrit.plugins.kafka.session.KafkaSession;
 
 @Singleton
 public class KafkaPublisher implements EventListener {

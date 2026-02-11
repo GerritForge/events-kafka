@@ -11,12 +11,12 @@
 
 package com.gerritforge.gerrit.plugins.kafka.publish;
 
+import com.gerritforge.gerrit.plugins.kafka.KafkaEventsMetrics;
 import com.google.gerrit.metrics.Counter1;
 import com.google.gerrit.metrics.Description;
 import com.google.gerrit.metrics.MetricMaker;
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
-import com.gerritforge.gerrit.plugins.kafka.KafkaEventsMetrics;
 
 @Singleton
 public class KafkaEventsPublisherMetrics extends KafkaEventsMetrics {

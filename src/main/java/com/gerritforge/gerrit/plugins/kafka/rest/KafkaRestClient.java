@@ -13,6 +13,7 @@ package com.gerritforge.gerrit.plugins.kafka.rest;
 
 import static java.nio.charset.StandardCharsets.UTF_8;
 
+import com.gerritforge.gerrit.plugins.kafka.config.KafkaProperties;
 import com.google.common.base.Function;
 import com.google.common.flogger.FluentLogger;
 import com.google.common.net.MediaType;
@@ -23,7 +24,6 @@ import com.google.common.util.concurrent.ListenableFuture;
 import com.google.gerrit.common.Nullable;
 import com.google.inject.Inject;
 import com.google.inject.assistedinject.Assisted;
-import com.gerritforge.gerrit.plugins.kafka.config.KafkaProperties;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.net.URI;
@@ -156,7 +156,8 @@ public class KafkaRestClient {
     post.setConfig(createRequestConfig());
     post.setEntity(
         new StringEntity(
-            "{\"format\": \"json\",\"auto.offset.reset\": \"earliest\", \"auto.commit.enable\":\"true\", \"consumer.request.timeout.ms\": \"1000\"}",
+            "{\"format\": \"json\",\"auto.offset.reset\": \"earliest\","
+                + " \"auto.commit.enable\":\"true\", \"consumer.request.timeout.ms\": \"1000\"}",
             ContentType.create(KAFKA_V2, UTF_8)));
     return post;
   }

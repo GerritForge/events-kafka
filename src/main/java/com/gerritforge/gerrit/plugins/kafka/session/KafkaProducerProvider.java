@@ -11,9 +11,9 @@
 
 package com.gerritforge.gerrit.plugins.kafka.session;
 
+import com.gerritforge.gerrit.plugins.kafka.config.KafkaProperties;
 import com.google.inject.Inject;
 import com.google.inject.Provider;
-import com.gerritforge.gerrit.plugins.kafka.config.KafkaProperties;
 import org.apache.kafka.clients.producer.KafkaProducer;
 import org.apache.kafka.clients.producer.Producer;
 

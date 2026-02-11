@@ -11,8 +11,6 @@
 
 package com.gerritforge.gerrit.plugins.kafka.api;
 
-import com.google.inject.TypeLiteral;
-import com.google.inject.assistedinject.FactoryModuleBuilder;
 import com.gerritforge.gerrit.plugins.kafka.config.KafkaProperties;
 import com.gerritforge.gerrit.plugins.kafka.config.KafkaProperties.ClientType;
 import com.gerritforge.gerrit.plugins.kafka.config.KafkaSubscriberProperties;
@@ -20,6 +18,8 @@ import com.gerritforge.gerrit.plugins.kafka.publish.KafkaRestProducer;
 import com.gerritforge.gerrit.plugins.kafka.rest.FutureExecutor;
 import com.gerritforge.gerrit.plugins.kafka.rest.HttpHostProxy;
 import com.gerritforge.gerrit.plugins.kafka.rest.KafkaRestClient;
+import com.google.inject.TypeLiteral;
+import com.google.inject.assistedinject.FactoryModuleBuilder;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import org.apache.kafka.clients.producer.Producer;

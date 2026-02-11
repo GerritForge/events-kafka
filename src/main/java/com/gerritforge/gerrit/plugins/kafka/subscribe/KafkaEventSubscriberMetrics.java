@@ -10,12 +10,12 @@
 // limitations under the License.
 package com.gerritforge.gerrit.plugins.kafka.subscribe;
 
+import com.gerritforge.gerrit.plugins.kafka.KafkaEventsMetrics;
 import com.google.gerrit.metrics.Counter1;
 import com.google.gerrit.metrics.Description;
 import com.google.gerrit.metrics.MetricMaker;
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
-import com.gerritforge.gerrit.plugins.kafka.KafkaEventsMetrics;
 
 @Singleton
 class KafkaEventSubscriberMetrics extends KafkaEventsMetrics {

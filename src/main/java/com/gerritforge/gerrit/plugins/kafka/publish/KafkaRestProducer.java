@@ -11,11 +11,11 @@
 
 package com.gerritforge.gerrit.plugins.kafka.publish;
 
+import com.gerritforge.gerrit.plugins.kafka.config.KafkaProperties;
+import com.gerritforge.gerrit.plugins.kafka.rest.KafkaRestClient;
 import com.google.common.flogger.FluentLogger;
 import com.google.common.util.concurrent.Futures;
 import com.google.inject.Inject;
-import com.gerritforge.gerrit.plugins.kafka.config.KafkaProperties;
-import com.gerritforge.gerrit.plugins.kafka.rest.KafkaRestClient;
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.time.Duration;

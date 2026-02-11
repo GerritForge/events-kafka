@@ -12,14 +12,14 @@ package com.gerritforge.gerrit.plugins.kafka.subscribe;
 
 import static java.nio.charset.StandardCharsets.UTF_8;
 
+import com.gerritforge.gerrit.plugins.kafka.broker.ConsumerExecutor;
+import com.gerritforge.gerrit.plugins.kafka.config.KafkaSubscriberProperties;
 import com.google.common.flogger.FluentLogger;
 import com.google.gerrit.server.events.Event;
 import com.google.gerrit.server.util.ManualRequestContext;
 import com.google.gerrit.server.util.OneOffRequestContext;
 import com.google.inject.Inject;
 import com.google.inject.assistedinject.Assisted;
-import com.gerritforge.gerrit.plugins.kafka.broker.ConsumerExecutor;
-import com.gerritforge.gerrit.plugins.kafka.config.KafkaSubscriberProperties;
 import java.time.Duration;
 import java.util.Collections;
 import java.util.Optional;

@@ -11,6 +11,8 @@
 
 package com.gerritforge.gerrit.plugins.kafka.session;
 
+import com.gerritforge.gerrit.plugins.kafka.config.KafkaProperties;
+import com.gerritforge.gerrit.plugins.kafka.publish.KafkaEventsPublisherMetrics;
 import com.google.common.util.concurrent.Futures;
 import com.google.common.util.concurrent.JdkFutureAdapters;
 import com.google.common.util.concurrent.ListenableFuture;
@@ -18,8 +20,6 @@ import com.google.common.util.concurrent.MoreExecutors;
 import com.google.common.util.concurrent.SettableFuture;
 import com.google.inject.Inject;
 import com.google.inject.Provider;
-import com.gerritforge.gerrit.plugins.kafka.config.KafkaProperties;
-import com.gerritforge.gerrit.plugins.kafka.publish.KafkaEventsPublisherMetrics;
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.util.Objects;

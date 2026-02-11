@@ -11,15 +11,6 @@
 
 package com.gerritforge.gerrit.plugins.kafka;
 
-import com.google.gerrit.extensions.events.LifecycleListener;
-import com.google.gerrit.extensions.registration.DynamicSet;
-import com.google.gerrit.server.events.EventListener;
-import com.google.gerrit.server.git.WorkQueue;
-import com.google.inject.AbstractModule;
-import com.google.inject.Inject;
-import com.google.inject.Scopes;
-import com.google.inject.TypeLiteral;
-import com.google.inject.assistedinject.FactoryModuleBuilder;
 import com.gerritforge.gerrit.plugins.kafka.api.KafkaApiModule;
 import com.gerritforge.gerrit.plugins.kafka.config.KafkaProperties;
 import com.gerritforge.gerrit.plugins.kafka.config.KafkaProperties.ClientType;
@@ -31,6 +22,15 @@ import com.gerritforge.gerrit.plugins.kafka.rest.HttpHostProxy;
 import com.gerritforge.gerrit.plugins.kafka.rest.HttpHostProxyProvider;
 import com.gerritforge.gerrit.plugins.kafka.rest.KafkaRestClient;
 import com.gerritforge.gerrit.plugins.kafka.session.KafkaProducerProvider;
+import com.google.gerrit.extensions.events.LifecycleListener;
+import com.google.gerrit.extensions.registration.DynamicSet;
+import com.google.gerrit.server.events.EventListener;
+import com.google.gerrit.server.git.WorkQueue;
+import com.google.inject.AbstractModule;
+import com.google.inject.Inject;
+import com.google.inject.Scopes;
+import com.google.inject.TypeLiteral;
+import com.google.inject.assistedinject.FactoryModuleBuilder;
 import java.util.concurrent.ExecutorService;
 import org.apache.kafka.clients.producer.Producer;
 

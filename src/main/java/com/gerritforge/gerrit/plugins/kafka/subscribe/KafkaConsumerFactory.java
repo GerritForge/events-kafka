@@ -11,9 +11,9 @@
 
 package com.gerritforge.gerrit.plugins.kafka.subscribe;
 
+import com.gerritforge.gerrit.plugins.kafka.config.KafkaSubscriberProperties;
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
-import com.gerritforge.gerrit.plugins.kafka.config.KafkaSubscriberProperties;
 import org.apache.kafka.clients.consumer.Consumer;
 import org.apache.kafka.clients.consumer.KafkaConsumer;
 import org.apache.kafka.common.serialization.ByteArrayDeserializer;

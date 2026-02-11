@@ -14,10 +14,10 @@ package com.gerritforge.gerrit.plugins.kafka;
 import com.gerritforge.gerrit.eventbroker.BrokerApi;
 import com.gerritforge.gerrit.eventbroker.TopicSubscriber;
 import com.gerritforge.gerrit.eventbroker.TopicSubscriberWithGroupId;
+import com.gerritforge.gerrit.plugins.kafka.publish.KafkaPublisher;
 import com.google.gerrit.extensions.events.LifecycleListener;
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
-import com.gerritforge.gerrit.plugins.kafka.publish.KafkaPublisher;
 import java.util.Set;
 
 @Singleton

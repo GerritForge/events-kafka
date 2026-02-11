@@ -11,9 +11,9 @@
 
 package com.gerritforge.gerrit.plugins.kafka.rest;
 
+import com.gerritforge.gerrit.plugins.kafka.config.KafkaProperties;
 import com.google.common.base.Strings;
 import com.google.inject.Inject;
-import com.gerritforge.gerrit.plugins.kafka.config.KafkaProperties;
 import java.net.URISyntaxException;
 import org.apache.http.auth.AuthScope;
 import org.apache.http.auth.UsernamePasswordCredentials;

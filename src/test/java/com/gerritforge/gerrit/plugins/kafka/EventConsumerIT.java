@@ -13,9 +13,9 @@ package com.gerritforge.gerrit.plugins.kafka;
 
 import static com.google.common.truth.Truth.assertThat;
 import static java.util.concurrent.TimeUnit.MILLISECONDS;
-import static org.junit.Assert.fail;
 
 import com.gerritforge.gerrit.eventbroker.BrokerApi;
+import com.gerritforge.gerrit.plugins.kafka.config.KafkaProperties;
 import com.google.common.base.Stopwatch;
 import com.google.common.collect.Iterables;
 import com.google.gerrit.acceptance.LightweightPluginDaemonTest;
@@ -31,7 +31,6 @@ import com.google.gerrit.server.events.Event;
 import com.google.gerrit.server.events.EventGsonProvider;
 import com.google.gerrit.server.events.ProjectCreatedEvent;
 import com.google.gson.Gson;
-import com.gerritforge.gerrit.plugins.kafka.config.KafkaProperties;
 import java.time.Duration;
 import java.util.ArrayList;
 import java.util.Collections;

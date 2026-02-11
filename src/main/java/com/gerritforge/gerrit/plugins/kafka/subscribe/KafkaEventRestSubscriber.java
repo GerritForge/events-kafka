@@ -12,6 +12,9 @@ package com.gerritforge.gerrit.plugins.kafka.subscribe;
 
 import static java.nio.charset.StandardCharsets.UTF_8;
 
+import com.gerritforge.gerrit.plugins.kafka.broker.ConsumerExecutor;
+import com.gerritforge.gerrit.plugins.kafka.config.KafkaSubscriberProperties;
+import com.gerritforge.gerrit.plugins.kafka.rest.KafkaRestClient;
 import com.google.common.flogger.FluentLogger;
 import com.google.common.util.concurrent.Futures;
 import com.google.common.util.concurrent.ListenableFuture;
@@ -24,9 +27,6 @@ import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
 import com.google.inject.Inject;
 import com.google.inject.assistedinject.Assisted;
-import com.gerritforge.gerrit.plugins.kafka.broker.ConsumerExecutor;
-import com.gerritforge.gerrit.plugins.kafka.config.KafkaSubscriberProperties;
-import com.gerritforge.gerrit.plugins.kafka.rest.KafkaRestClient;
 import java.io.IOException;
 import java.io.InputStreamReader;
 import java.io.Reader;
@@ -62,6 +62,7 @@ public class KafkaEventRestSubscriber implements KafkaEventSubscriber {
   private static final int DELAY_RECONNECT_AFTER_FAILURE_MSEC = 1000;
   // Prefix is a length of 'rest-consumer-' string
   private static final int INSTANCE_ID_PREFIX_LEN = 14;
+
   /**
    * Suffix is a length of a unique identifier for example: '-9836fe85-d838-4722-97c9-4a7b-34e834d'
    */
