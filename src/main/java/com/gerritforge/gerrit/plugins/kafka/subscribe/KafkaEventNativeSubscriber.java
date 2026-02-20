@@ -30,6 +30,7 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.atomic.AtomicBoolean;
 import org.apache.kafka.clients.consumer.Consumer;
 import org.apache.kafka.clients.consumer.ConsumerRecords;
+import org.apache.kafka.common.TopicPartition;
 import org.apache.kafka.common.errors.WakeupException;
 import org.apache.kafka.common.serialization.Deserializer;
 
@@ -47,6 +48,7 @@ public class KafkaEventNativeSubscriber implements KafkaEventSubscriber {
   private final KafkaConsumerFactory consumerFactory;
   private final Deserializer<byte[]> keyDeserializer;
   private final boolean autoCommitEnabled;
+  private final long commitIntervalMs;
 
   private ContextAwareConsumer<Event> contextAwareMessageProcessor;
   private String topic;
@@ -76,6 +78,7 @@ public class KafkaEventNativeSubscriber implements KafkaEventSubscriber {
     this.configuration = (KafkaSubscriberProperties) configuration.clone();
     externalGroupId.ifPresent(gid -> this.configuration.setProperty("group.id", gid));
     this.autoCommitEnabled = this.configuration.isAutoCommitEnabled();
+    this.commitIntervalMs = this.configuration.getCommitIntervalMs();
   }
 
   @Override
@@ -146,9 +149,14 @@ public class KafkaEventNativeSubscriber implements KafkaEventSubscriber {
 
   private class ReceiverJob implements Runnable {
     private final Consumer<byte[], byte[]> consumer;
+    private final KafkaCommitMessageContext.CommitCoordinator commitCoordinator;
 
     public ReceiverJob(Consumer<byte[], byte[]> consumer) {
       this.consumer = consumer;
+      this.commitCoordinator =
+          autoCommitEnabled
+              ? null
+              : new KafkaCommitMessageContext.CommitCoordinator(consumer, commitIntervalMs);
     }
 
     public void wakeup() {
@@ -183,9 +191,16 @@ public class KafkaEventNativeSubscriber implements KafkaEventSubscriber {
                 try (ManualRequestContext ctx = oneOffCtx.open()) {
                   Event event =
                       valueDeserializer.deserialize(consumerRecord.topic(), consumerRecord.value());
-                  contextAwareMessageProcessor.accept(
-                      event,
-                      new KafkaCommitMessageContext(autoCommitEnabled, consumerRecord, consumer));
+                  if (autoCommitEnabled) {
+                    contextAwareMessageProcessor.accept(event, MessageContext.noop());
+                  } else {
+                    TopicPartition partition =
+                        new TopicPartition(consumerRecord.topic(), consumerRecord.partition());
+                    long nextOffset = consumerRecord.offset() + 1;
+                    contextAwareMessageProcessor.accept(
+                        event,
+                        new KafkaCommitMessageContext(commitCoordinator, partition, nextOffset));
+                  }
                 } catch (Exception e) {
                   logger.atSevere().withCause(e).log(
                       "Malformed event '%s': [Exception: %s]",
@@ -206,6 +221,9 @@ public class KafkaEventNativeSubscriber implements KafkaEventSubscriber {
             "Existing consumer loop of topic %s because of a non-recoverable exception", topic);
         reconnectAfterFailure();
       } finally {
+        if (commitCoordinator != null) {
+          commitCoordinator.commitNow();
+        }
         consumer.close();
       }
     }
