@@ -13,6 +13,7 @@ package com.gerritforge.gerrit.plugins.kafka.subscribe;
 import static java.nio.charset.StandardCharsets.UTF_8;
 
 import com.gerritforge.gerrit.eventbroker.ContextAwareConsumer;
+import com.gerritforge.gerrit.eventbroker.MessageContext;
 import com.gerritforge.gerrit.plugins.kafka.broker.ConsumerExecutor;
 import com.gerritforge.gerrit.plugins.kafka.config.KafkaSubscriberProperties;
 import com.google.common.flogger.FluentLogger;
@@ -29,6 +30,7 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.atomic.AtomicBoolean;
 import org.apache.kafka.clients.consumer.Consumer;
 import org.apache.kafka.clients.consumer.ConsumerRecords;
+import org.apache.kafka.common.TopicPartition;
 import org.apache.kafka.common.errors.WakeupException;
 import org.apache.kafka.common.serialization.Deserializer;
 
@@ -44,6 +46,7 @@ public class KafkaEventNativeSubscriber implements KafkaEventSubscriber {
   private final ExecutorService executor;
   private final KafkaEventSubscriberMetrics subscriberMetrics;
   private final KafkaConsumerFactory consumerFactory;
+  private final KafkaCommitCoordinator.Factory commitCoordinatorFactory;
   private final Deserializer<byte[]> keyDeserializer;
   private final boolean autoCommitEnabled;
 
@@ -58,6 +61,7 @@ public class KafkaEventNativeSubscriber implements KafkaEventSubscriber {
   public KafkaEventNativeSubscriber(
       KafkaSubscriberProperties configuration,
       KafkaConsumerFactory consumerFactory,
+      KafkaCommitCoordinator.Factory commitCoordinatorFactory,
       Deserializer<byte[]> keyDeserializer,
       Deserializer<Event> valueDeserializer,
       OneOffRequestContext oneOffCtx,
@@ -69,6 +73,7 @@ public class KafkaEventNativeSubscriber implements KafkaEventSubscriber {
     this.executor = executor;
     this.subscriberMetrics = subscriberMetrics;
     this.consumerFactory = consumerFactory;
+    this.commitCoordinatorFactory = commitCoordinatorFactory;
     this.keyDeserializer = keyDeserializer;
     this.valueDeserializer = valueDeserializer;
     this.externalGroupId = externalGroupId;
@@ -140,9 +145,11 @@ public class KafkaEventNativeSubscriber implements KafkaEventSubscriber {
 
   private class ReceiverJob implements Runnable {
     private final Consumer<byte[], byte[]> consumer;
+    private final KafkaCommitCoordinator commitCoordinator;
 
     public ReceiverJob(Consumer<byte[], byte[]> consumer) {
       this.consumer = consumer;
+      this.commitCoordinator = autoCommitEnabled ? null : commitCoordinatorFactory.create(consumer);
     }
 
     public void wakeup() {
@@ -177,9 +184,16 @@ public class KafkaEventNativeSubscriber implements KafkaEventSubscriber {
                 try (ManualRequestContext ctx = oneOffCtx.open()) {
                   Event event =
                       valueDeserializer.deserialize(consumerRecord.topic(), consumerRecord.value());
-                  messageProcessor.accept(
-                      event,
-                      new KafkaCommitMessageContext(autoCommitEnabled, consumerRecord, consumer));
+                  if (autoCommitEnabled) {
+                    messageProcessor.accept(event, MessageContext.noop());
+                  } else {
+                    TopicPartition partition =
+                        new TopicPartition(consumerRecord.topic(), consumerRecord.partition());
+                    long recordOffset = consumerRecord.offset();
+                    messageProcessor.accept(
+                        event,
+                        new KafkaCommitMessageContext(commitCoordinator, partition, recordOffset));
+                  }
                 } catch (Exception e) {
                   logger.atSevere().withCause(e).log(
                       "Malformed event '%s': [Exception: %s]",
@@ -200,6 +214,10 @@ public class KafkaEventNativeSubscriber implements KafkaEventSubscriber {
             "Existing consumer loop of topic %s because of a non-recoverable exception", topic);
         reconnectAfterFailure();
       } finally {
+        if (commitCoordinator != null) {
+          commitCoordinator.stop();
+          commitCoordinator.commitNow();
+        }
         consumer.close();
       }
     }
