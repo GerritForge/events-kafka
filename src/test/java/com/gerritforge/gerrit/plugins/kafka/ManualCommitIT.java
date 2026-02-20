@@ -15,6 +15,7 @@ import static com.google.common.truth.Truth.assertThat;
 import static com.google.gerrit.acceptance.WaitUtil.waitUntil;
 
 import com.gerritforge.gerrit.eventbroker.BrokerApi;
+import com.gerritforge.gerrit.eventbroker.MessageContext;
 import com.gerritforge.gerrit.plugins.kafka.config.KafkaSubscriberProperties;
 import com.google.gerrit.acceptance.LightweightPluginDaemonTest;
 import com.google.gerrit.acceptance.NoHttpd;
@@ -29,6 +30,10 @@ import java.util.List;
 import java.util.Map;
 import java.util.Properties;
 import java.util.Set;
+import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicInteger;
+import java.util.concurrent.atomic.AtomicReference;
 import org.apache.kafka.clients.consumer.ConsumerConfig;
 import org.apache.kafka.clients.consumer.KafkaConsumer;
 import org.apache.kafka.clients.consumer.OffsetAndMetadata;
@@ -93,6 +98,7 @@ public class ManualCommitIT extends LightweightPluginDaemonTest {
   @Test
   @UseLocalDisk
   @GerritConfig(name = "plugin.events-kafka.enableAutoCommit", value = "false")
+  @GerritConfig(name = "plugin.events-kafka.autoCommitIntervalMs", value = "200")
   public void shouldCommitManually() throws InterruptedException {
     String topic = "manual_commit_topic";
     OffsetAndMetadata committedOffset =
@@ -105,12 +111,133 @@ public class ManualCommitIT extends LightweightPluginDaemonTest {
   @Test
   @UseLocalDisk
   @GerritConfig(name = "plugin.events-kafka.enableAutoCommit", value = "false")
+  @GerritConfig(name = "plugin.events-kafka.autoCommitIntervalMs", value = "200")
   public void shouldNotCommitOffsetWithoutAck() throws Exception {
     String topic = "manual_commit_without_ack_topic";
     assertThat(
             consumeOneMessageAndGetOffset(
                 topic, "instance-no-ack", DO_NOT_ACK, () -> getCommittedOffset(topic) == null))
         .isNull();
+  }
+
+  @Test
+  @UseLocalDisk
+  @GerritConfig(name = "plugin.events-kafka.enableAutoCommit", value = "false")
+  @GerritConfig(name = "plugin.events-kafka.autoCommitIntervalMs", value = "500")
+  public void shouldCommitOnAckAfterIntervalElapsed() throws Exception {
+    String topic = "manual_commit_interval_topic";
+    CountDownLatch secondAckDone = new CountDownLatch(1);
+    AtomicInteger messageIndex = new AtomicInteger(0);
+
+    BrokerApi brokerApi = kafkaBrokerApi();
+    // Ack #1 immediately, then delay ack #2 beyond commit interval.
+    brokerApi.receiveAsync(
+        topic,
+        (event, ctx) -> {
+          int index = messageIndex.incrementAndGet();
+          if (index == 1) {
+            ctx.ack();
+            return;
+          }
+          sleep(600);
+          ctx.ack();
+          secondAckDone.countDown();
+        });
+    brokerApi.send(topic, newProjectCreatedEvent("ev-1"));
+    brokerApi.send(topic, newProjectCreatedEvent("ev-2"));
+
+    try {
+      // Once ack #2 happens, the staged offsets are committed together to offset 2.
+      await(secondAckDone);
+      waitUntil(() -> getCommittedOffset(topic).offset() == 2L, WAIT_FOR_POLL_TIMEOUT);
+    } finally {
+      brokerApi.disconnect(topic, null);
+    }
+  }
+
+  @Test
+  @UseLocalDisk
+  @GerritConfig(name = "plugin.events-kafka.enableAutoCommit", value = "false")
+  @GerritConfig(name = "plugin.events-kafka.autoCommitIntervalMs", value = "500")
+  public void shouldCommitOnlyContiguousAckedOffsets() throws Exception {
+    String topic = "manual_commit_contiguous_topic";
+    CountDownLatch thirdAckDone = new CountDownLatch(1);
+    CountDownLatch secondAckDone = new CountDownLatch(1);
+    AtomicInteger messageIndex = new AtomicInteger(0);
+    AtomicReference<MessageContext> secondContext = new AtomicReference<>();
+
+    BrokerApi brokerApi = kafkaBrokerApi();
+    // Ack order is 1, 3, then 2. This creates a gap before acking #2.
+    brokerApi.receiveAsync(
+        topic,
+        (event, ctx) -> {
+          int index = messageIndex.incrementAndGet();
+          if (index == 1) {
+            ctx.ack();
+            return;
+          }
+
+          if (index == 2) {
+            secondContext.set(ctx);
+            return;
+          }
+
+          sleep(600);
+          ctx.ack();
+          thirdAckDone.countDown();
+          sleep(600);
+          secondContext.get().ack();
+          secondAckDone.countDown();
+        });
+    brokerApi.send(topic, newProjectCreatedEvent("ev-1"));
+    brokerApi.send(topic, newProjectCreatedEvent("ev-2"));
+    brokerApi.send(topic, newProjectCreatedEvent("ev-3"));
+
+    try {
+      // With acked offsets 1 and 3 (gap at 2), only offset 1 is committable.
+      await(thirdAckDone);
+      waitUntil(() -> getCommittedOffset(topic) != null, WAIT_FOR_POLL_TIMEOUT);
+      assertThat(getCommittedOffset(topic).offset()).isEqualTo(1L);
+
+      // Once the gap is filled (ack #2), commit advances to offset 3.
+      await(secondAckDone);
+      waitUntil(() -> getCommittedOffset(topic).offset() == 3L, WAIT_FOR_POLL_TIMEOUT);
+    } finally {
+      brokerApi.disconnect(topic, null);
+    }
+  }
+
+  @Test
+  @UseLocalDisk
+  @GerritConfig(name = "plugin.events-kafka.enableAutoCommit", value = "false")
+  @GerritConfig(name = "plugin.events-kafka.autoCommitIntervalMs", value = "200")
+  public void shouldCommitFromNonZeroStartingOffset() throws Exception {
+    String topic = "manual_commit_non_zero_offset_topic";
+    CountDownLatch firstAckDone = new CountDownLatch(1);
+    AtomicReference<String> firstReceivedInstanceId = new AtomicReference<>();
+
+    BrokerApi brokerApi = kafkaBrokerApi();
+    brokerApi.send(topic, newProjectCreatedEvent("ev-1"));
+    brokerApi.send(topic, newProjectCreatedEvent("ev-2"));
+    brokerApi.send(topic, newProjectCreatedEvent("ev-3"));
+    commitOffset(topic, 2L);
+
+    brokerApi.receiveAsync(
+        topic,
+        (event, ctx) -> {
+          if (firstReceivedInstanceId.compareAndSet(null, event.instanceId)) {
+            ctx.ack();
+            firstAckDone.countDown();
+          }
+        });
+
+    try {
+      await(firstAckDone);
+      waitUntil(() -> getCommittedOffset(topic).offset() == 3L, WAIT_FOR_POLL_TIMEOUT);
+      assertThat(firstReceivedInstanceId.get()).isEqualTo("ev-3");
+    } finally {
+      brokerApi.disconnect(topic, null);
+    }
   }
 
   private OffsetAndMetadata consumeOneMessageAndGetOffset(
@@ -142,6 +269,21 @@ public class ManualCommitIT extends LightweightPluginDaemonTest {
   }
 
   private OffsetAndMetadata getCommittedOffset(String topic) {
+    try (KafkaConsumer<byte[], byte[]> verifierConsumer = new KafkaConsumer<>(consumerProps())) {
+      TopicPartition tp = new TopicPartition(topic, 0);
+      Map<TopicPartition, OffsetAndMetadata> committed = verifierConsumer.committed(Set.of(tp));
+      return committed.get(tp);
+    }
+  }
+
+  private void commitOffset(String topic, long offset) {
+    try (KafkaConsumer<byte[], byte[]> verifierConsumer = new KafkaConsumer<>(consumerProps())) {
+      TopicPartition tp = new TopicPartition(topic, 0);
+      verifierConsumer.commitSync(Map.of(tp, new OffsetAndMetadata(offset)));
+    }
+  }
+
+  private Properties consumerProps() {
     Properties props = new Properties();
     props.put(ConsumerConfig.BOOTSTRAP_SERVERS_CONFIG, kafka.getBootstrapServers());
     props.put(ConsumerConfig.GROUP_ID_CONFIG, kafkaSubscriberProperties().getGroupId());
@@ -150,12 +292,7 @@ public class ManualCommitIT extends LightweightPluginDaemonTest {
         ConsumerConfig.VALUE_DESERIALIZER_CLASS_CONFIG, ByteArrayDeserializer.class.getName());
     props.put(ConsumerConfig.ENABLE_AUTO_COMMIT_CONFIG, "false");
     props.put(ConsumerConfig.AUTO_OFFSET_RESET_CONFIG, "earliest");
-
-    try (KafkaConsumer<byte[], byte[]> verifierConsumer = new KafkaConsumer<>(props)) {
-      TopicPartition tp = new TopicPartition(topic, 0);
-      Map<TopicPartition, OffsetAndMetadata> committed = verifierConsumer.committed(Set.of(tp));
-      return committed.get(tp);
-    }
+    return props;
   }
 
   private BrokerApi kafkaBrokerApi() {
@@ -164,5 +301,23 @@ public class ManualCommitIT extends LightweightPluginDaemonTest {
 
   private KafkaSubscriberProperties kafkaSubscriberProperties() {
     return plugin.getSysInjector().getInstance(KafkaSubscriberProperties.class);
+  }
+
+  private void await(CountDownLatch latch) {
+    try {
+      assertThat(latch.await(WAIT_FOR_POLL_TIMEOUT.toSeconds(), TimeUnit.SECONDS)).isTrue();
+    } catch (InterruptedException e) {
+      Thread.currentThread().interrupt();
+      throw new AssertionError("Interrupted while waiting for test latch", e);
+    }
+  }
+
+  private void sleep(long millis) {
+    try {
+      Thread.sleep(millis);
+    } catch (InterruptedException e) {
+      Thread.currentThread().interrupt();
+      throw new AssertionError("Interrupted while sleeping in test", e);
+    }
   }
 }
