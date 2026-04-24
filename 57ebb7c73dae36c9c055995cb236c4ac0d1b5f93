@@ -16,6 +16,24 @@
       "message": "Add the `events-broker` change it depends on.\n\n\n\n```suggestion\nDepends-On: https://gerrit-review.googlesource.com/c/modules/events-broker/+/549941\nBug: Issue 486866989\n```",
       "revId": "57ebb7c73dae36c9c055995cb236c4ac0d1b5f93",
       "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "a7903667_3bc668c1",
+        "filename": "/COMMIT_MSG",
+        "patchSetId": 18
+      },
+      "lineNbr": 24,
+      "author": {
+        "id": 1015244
+      },
+      "writtenOn": "2026-04-24T16:03:08Z",
+      "side": 1,
+      "message": "Fix applied.",
+      "parentUuid": "e3a052d3_b29d7c98",
+      "revId": "57ebb7c73dae36c9c055995cb236c4ac0d1b5f93",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735"
     }
   ]
 }
