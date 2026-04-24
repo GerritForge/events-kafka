@@ -1,0 +1,27 @@
+{
+  "comments": [
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "34ed39d2_ac2f3a33",
+        "filename": "src/main/java/com/gerritforge/gerrit/plugins/kafka/subscribe/KafkaExplicitAcknowledgement.java",
+        "patchSetId": 21
+      },
+      "lineNbr": 44,
+      "author": {
+        "id": 1015244
+      },
+      "writtenOn": "2026-04-24T16:27:29Z",
+      "side": 1,
+      "message": "@luca.milanesio@gmail.com I think this is the real pickle here.\nThis commit must run *on the same thread* that consumed the message.\n\nFor Kafka, this means the thread that is running the `ReceiverJob` ([here])(https://github.com/GerritForge/events-kafka/blob/7fc65d2011c399536e6debfd26f02b7361774068/src/main/java/com/gerritforge/gerrit/plugins/kafka/subscribe/KafkaEventNativeSubscriber.java#L174), that is polling from this particular topic.\n\nI am not sure how we can implement thread-safety here, without having clients (i.e. multi-site) to worry about it.\n\nAny ideas?",
+      "range": {
+        "startLine": 44,
+        "startChar": 0,
+        "endLine": 44,
+        "endChar": 71
+      },
+      "revId": "b2c3c94f445f485d205bbf75e6b1e3edbfef4fcd",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735"
+    }
+  ]
+}
