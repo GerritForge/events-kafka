@@ -22,6 +22,30 @@
       },
       "revId": "b2c3c94f445f485d205bbf75e6b1e3edbfef4fcd",
       "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "e3920267_87da6d00",
+        "filename": "src/main/java/com/gerritforge/gerrit/plugins/kafka/subscribe/KafkaExplicitAcknowledgement.java",
+        "patchSetId": 21
+      },
+      "lineNbr": 44,
+      "author": {
+        "id": 1015244
+      },
+      "writtenOn": "2026-04-28T12:35:08Z",
+      "side": 1,
+      "message": "We have checked and tested this in detail, and we don\u0027t actually have any problem at the moment.\n\nThe polling is done in the thread that executes the `ReceiverJob`.\nThe _same_ thread is also the one in which the `messageProcessor.accept()` processor is executed.\n\nAs long as the `acking` is done *by* the `messageProcessor.accept()`, committing works as expected.",
+      "parentUuid": "34ed39d2_ac2f3a33",
+      "range": {
+        "startLine": 44,
+        "startChar": 0,
+        "endLine": 44,
+        "endChar": 71
+      },
+      "revId": "b2c3c94f445f485d205bbf75e6b1e3edbfef4fcd",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735"
     }
   ]
 }
