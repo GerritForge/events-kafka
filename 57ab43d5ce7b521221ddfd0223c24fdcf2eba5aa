@@ -1,0 +1,27 @@
+{
+  "comments": [
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "7e0eb440_3c7d766d",
+        "filename": "src/main/java/com/gerritforge/gerrit/plugins/kafka/subscribe/KafkaNativeAcknowledgement.java",
+        "patchSetId": 27
+      },
+      "lineNbr": 49,
+      "author": {
+        "id": 1000000
+      },
+      "writtenOn": "2026-05-01T22:38:10Z",
+      "side": 1,
+      "message": "**Gemini**: Logging Verbosity for KafkaNativeAcknowledgement.ack(): The log.atInfo().log(\"Committed offset %d on %s\", offset, tp); message is logged for every successful offset commit. In a high-throughput environment, this can lead to excessive log noise, obscuring more critical information.\n\nI agree that the info logging is excessive here.",
+      "range": {
+        "startLine": 49,
+        "startChar": 10,
+        "endLine": 49,
+        "endChar": 16
+      },
+      "revId": "57ab43d5ce7b521221ddfd0223c24fdcf2eba5aa",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735"
+    }
+  ]
+}
