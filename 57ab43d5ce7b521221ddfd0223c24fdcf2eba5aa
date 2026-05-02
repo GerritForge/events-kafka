@@ -3,6 +3,29 @@
     {
       "unresolved": true,
       "key": {
+        "uuid": "f93d8aa5_644572e2",
+        "filename": "src/main/java/com/gerritforge/gerrit/plugins/kafka/config/KafkaSubscriberProperties.java",
+        "patchSetId": 27
+      },
+      "lineNbr": 106,
+      "author": {
+        "id": 1000000
+      },
+      "writtenOn": "2026-05-02T07:16:04Z",
+      "side": 1,
+      "message": "I believe warning isn\u0027t enough: we should fail the loading of the plugin when using manual commit and the REST-API variant of the broker.",
+      "range": {
+        "startLine": 102,
+        "startChar": 0,
+        "endLine": 106,
+        "endChar": 5
+      },
+      "revId": "57ab43d5ce7b521221ddfd0223c24fdcf2eba5aa",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735"
+    },
+    {
+      "unresolved": true,
+      "key": {
         "uuid": "7e0eb440_3c7d766d",
         "filename": "src/main/java/com/gerritforge/gerrit/plugins/kafka/subscribe/KafkaNativeAcknowledgement.java",
         "patchSetId": 27
@@ -19,6 +42,184 @@
         "startChar": 10,
         "endLine": 49,
         "endChar": 16
+      },
+      "revId": "57ab43d5ce7b521221ddfd0223c24fdcf2eba5aa",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "5508d23a_0e975374",
+        "filename": "src/test/java/com/gerritforge/gerrit/plugins/kafka/ManualCommitIT.java",
+        "patchSetId": 27
+      },
+      "lineNbr": 90,
+      "author": {
+        "id": 1000000
+      },
+      "writtenOn": "2026-05-02T07:16:04Z",
+      "side": 1,
+      "message": "These two tests are identical, with a different assertion value. They can be DRYed out into a single one.\n\n\n\n```suggestion\n  @Test\n  @GerritConfig(name \u003d \"plugin.events-kafka.enableAutoCommit\", value \u003d \"false\")\n  public void shouldSetEnableAutoCommitFalseForConsumer() {\n    shouldSetEnableAutoCommitForConsumerAndReadAsSubscriberProperty(false);\n  }\n\n  @Test\n  @GerritConfig(name \u003d \"plugin.events-kafka.enableAutoCommit\", value \u003d \"true\")\n  public void shouldSetEnableAutoCommitTrueForConsumer() {\n    shouldSetEnableAutoCommitForConsumerAndReadAsSubscriberProperty(true);\n  }\n\n  private void shouldSetEnableAutoCommitForConsumerAndReadAsSubscriberProperty(Boolean expectedAutoCommit) {\n    KafkaSubscriberProperties kafkaSubscriberProperties \u003d\n        plugin.getSysInjector().getInstance(KafkaSubscriberProperties.class);\n\n    assertThat(kafkaSubscriberProperties.isAutoCommitEnabled()).isEqualTo(expectedAutoCommit);\n    assertThat(kafkaSubscriberProperties.getProperty(ConsumerConfig.ENABLE_AUTO_COMMIT_CONFIG))\n        .isEqualTo(expectedAutoCommit.toString());\n  }\n```",
+      "range": {
+        "startLine": 70,
+        "startChar": 0,
+        "endLine": 90,
+        "endChar": 3
+      },
+      "revId": "57ab43d5ce7b521221ddfd0223c24fdcf2eba5aa",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "072ff414_06a3596b",
+        "filename": "src/test/java/com/gerritforge/gerrit/plugins/kafka/ManualCommitIT.java",
+        "patchSetId": 27
+      },
+      "lineNbr": 94,
+      "author": {
+        "id": 1000000
+      },
+      "writtenOn": "2026-05-02T07:16:04Z",
+      "side": 1,
+      "message": "Offset is one word.\n\n```suggestion\n  public void shouldCommitOffsetWhenAckIsCalled() throws InterruptedException {\n```",
+      "revId": "57ab43d5ce7b521221ddfd0223c24fdcf2eba5aa",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "a01ffc77_3b1e69e7",
+        "filename": "src/test/java/com/gerritforge/gerrit/plugins/kafka/ManualCommitIT.java",
+        "patchSetId": 27
+      },
+      "lineNbr": 96,
+      "author": {
+        "id": 1000000
+      },
+      "writtenOn": "2026-05-02T07:16:04Z",
+      "side": 1,
+      "message": "Interesting: so the committed offset may arrive *sometimes* after the ack is performed?",
+      "range": {
+        "startLine": 96,
+        "startChar": 58,
+        "endLine": 96,
+        "endChar": 97
+      },
+      "revId": "57ab43d5ce7b521221ddfd0223c24fdcf2eba5aa",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "d7d1d9bb_205f5871",
+        "filename": "src/test/java/com/gerritforge/gerrit/plugins/kafka/ManualCommitIT.java",
+        "patchSetId": 27
+      },
+      "lineNbr": 105,
+      "author": {
+        "id": 1000000
+      },
+      "writtenOn": "2026-05-02T07:16:04Z",
+      "side": 1,
+      "message": "I believe this is valid also at the start, so it is an always true condition.\n\n\n\n```suggestion\n    consumeOneMessage(topic, _ -\u003e {}, () -\u003e true);\n```",
+      "range": {
+        "startLine": 105,
+        "startChar": 38,
+        "endLine": 105,
+        "endChar": 77
+      },
+      "revId": "57ab43d5ce7b521221ddfd0223c24fdcf2eba5aa",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "74991cd7_0b0e111b",
+        "filename": "src/test/java/com/gerritforge/gerrit/plugins/kafka/ManualCommitIT.java",
+        "patchSetId": 27
+      },
+      "lineNbr": 124,
+      "author": {
+        "id": 1000000
+      },
+      "writtenOn": "2026-05-02T07:16:04Z",
+      "side": 1,
+      "message": "You set thrown at L121, therefore this is always `true` immediately or `false` immediately. I don\u0027t believe there\u0027s any value in waiting for it.",
+      "range": {
+        "startLine": 124,
+        "startChar": 8,
+        "endLine": 124,
+        "endChar": 35
+      },
+      "revId": "57ab43d5ce7b521221ddfd0223c24fdcf2eba5aa",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "5215d79a_e48c377c",
+        "filename": "src/test/java/com/gerritforge/gerrit/plugins/kafka/ManualCommitIT.java",
+        "patchSetId": 27
+      },
+      "lineNbr": 132,
+      "author": {
+        "id": 1000000
+      },
+      "writtenOn": "2026-05-02T07:16:04Z",
+      "side": 1,
+      "message": "```suggestion\n      Supplier\u003cBoolean\u003e waitUntilCondition)\n```",
+      "range": {
+        "startLine": 132,
+        "startChar": 24,
+        "endLine": 132,
+        "endChar": 33
+      },
+      "revId": "57ab43d5ce7b521221ddfd0223c24fdcf2eba5aa",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "a3a6f199_d1c473dc",
+        "filename": "src/test/java/com/gerritforge/gerrit/plugins/kafka/ManualCommitIT.java",
+        "patchSetId": 27
+      },
+      "lineNbr": 147,
+      "author": {
+        "id": 1000000
+      },
+      "writtenOn": "2026-05-02T07:16:04Z",
+      "side": 1,
+      "message": "```suggestion\n      waitUntil(waitUntilCondition, WAIT_FOR_POLL_TIMEOUT);\n```",
+      "range": {
+        "startLine": 147,
+        "startChar": 16,
+        "endLine": 147,
+        "endChar": 25
+      },
+      "revId": "57ab43d5ce7b521221ddfd0223c24fdcf2eba5aa",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "a8db4a85_a500d7ec",
+        "filename": "src/test/java/com/gerritforge/gerrit/plugins/kafka/api/KafkaBrokerApiTest.java",
+        "patchSetId": 27
+      },
+      "lineNbr": 161,
+      "author": {
+        "id": 1000000
+      },
+      "writtenOn": "2026-05-02T07:16:04Z",
+      "side": 1,
+      "message": "This is totally unused. How are tests supposed to verify the explicit/implicit ack?",
+      "range": {
+        "startLine": 161,
+        "startChar": 61,
+        "endLine": 161,
+        "endChar": 83
       },
       "revId": "57ab43d5ce7b521221ddfd0223c24fdcf2eba5aa",
       "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735"
