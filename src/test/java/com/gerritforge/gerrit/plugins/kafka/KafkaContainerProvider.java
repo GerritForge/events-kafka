@@ -11,6 +11,11 @@
 
 package com.gerritforge.gerrit.plugins.kafka;
 
+import com.github.dockerjava.api.command.InspectContainerResponse;
+import com.github.dockerjava.api.model.ExposedPort;
+import com.github.dockerjava.api.model.Ports;
+import com.google.common.base.Preconditions;
+import com.google.common.flogger.FluentLogger;
 import java.util.Map;
 import org.junit.Ignore;
 import org.testcontainers.containers.KafkaContainer;
@@ -32,6 +37,11 @@ public class KafkaContainerProvider {
             return String.format(
                     "INTERNAL://%s:%s,", getNetworkAliases().get(0), KAFKA_PORT_INTERNAL)
                 + super.getBootstrapServers();
+          }
+
+          @Override
+          public Integer getMappedPort(int originalPort) {
+                  return GenericContainerWithPortMappingFix.getMappedPort(dockerClient, this, originalPort);
           }
         };
 
