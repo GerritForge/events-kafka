@@ -10,10 +10,10 @@
 // limitations under the License.
 package com.gerritforge.gerrit.plugins.kafka.api;
 
+import com.gerritforge.gerrit.plugins.kafka.GenericContainerWithPortMappingFix;
 import com.gerritforge.gerrit.plugins.kafka.KafkaRestContainer;
 import org.junit.BeforeClass;
 import org.junit.Ignore;
-import org.testcontainers.containers.GenericContainer;
 import org.testcontainers.containers.wait.strategy.HttpWaitStrategy;
 import org.testcontainers.images.builder.ImageFromDockerfile;
 
@@ -45,7 +45,7 @@ public class KafkaBrokerRestApiTestBase extends KafkaBrokerApiTest {
             kafkaRestWithId.getKafkaRestContainerIP(),
             KafkaRestContainer.KAFKA_REST_PORT);
     nginx =
-        new GenericContainer<>(
+        new GenericContainerWithPortMappingFix<>(
                 new ImageFromDockerfile()
                     .withDockerfileFromBuilder(
                         builder ->
