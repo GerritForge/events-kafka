@@ -33,6 +33,12 @@ public class KafkaContainerProvider {
                     "INTERNAL://%s:%s,", getNetworkAliases().get(0), KAFKA_PORT_INTERNAL)
                 + super.getBootstrapServers();
           }
+
+          @Override
+          public Integer getMappedPort(int originalPort) {
+            return GenericContainerWithPortMappingFix.getMappedPort(
+                dockerClient, this, originalPort);
+          }
         };
 
     Map<String, String> kafkaEnv = kafkaContainer.getEnvMap();

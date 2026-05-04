@@ -18,12 +18,11 @@ import java.net.URISyntaxException;
 import java.util.Map;
 import org.junit.Ignore;
 import org.testcontainers.containers.BindMode;
-import org.testcontainers.containers.GenericContainer;
 import org.testcontainers.containers.KafkaContainer;
 import org.testcontainers.utility.DockerImageName;
 
 @Ignore
-public class KafkaRestContainer extends GenericContainer<KafkaRestContainer> {
+public class KafkaRestContainer extends GenericContainerWithPortMappingFix<KafkaRestContainer> {
 
   public static final String KAFKA_REST_PROXY_HOSTNAME = "restproxy";
   public static final int KAFKA_REST_PORT = 8082;
