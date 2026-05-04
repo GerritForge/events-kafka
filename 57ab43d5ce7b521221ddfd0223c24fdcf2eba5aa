@@ -243,6 +243,30 @@
     {
       "unresolved": true,
       "key": {
+        "uuid": "cc0ae49a_f45f6f8c",
+        "filename": "src/main/java/com/gerritforge/gerrit/plugins/kafka/subscribe/KafkaEventNativeSubscriber.java",
+        "patchSetId": 27
+      },
+      "lineNbr": 185,
+      "author": {
+        "id": 1000000
+      },
+      "writtenOn": "2026-05-04T21:01:45Z",
+      "side": 1,
+      "message": "\u003e Done, however, I am not sure this is actually a relief in terms of JVM heap pressure, since Java still needs to allocate an anonymous class for this lambda.\n\nTrue, that is because the lambda is defined inside the method with a local context; each instance of the lambda needs to keep that context.\n\nI\u0027ve uploaded a small adjustment to the `events-broker` for allowing a context-free lambda: https://gerrit-review.googlesource.com/c/modules/events-broker/+/579361.\n\n\n```suggestion\n                          : this::kafkaAck);\n```\n\nYou can define a method called `kafkaAck` which is passed as a lambda without extra parameters.\n\n```\n    private void kafkaAck(Event event) {\n      ConsumerRecord\u003cbyte[], byte[]\u003e consumerRecord \u003d ackRecords.get(event);\n      if (consumerRecord \u003d\u003d null) {\n        throw new MessageAcknowledgementException(\"Invalid or already acked Event\");\n      }\n\n      TopicPartition tp \u003d\n              new TopicPartition(\n                      consumerRecord.topic(), consumerRecord.partition());\n      long offset \u003d consumerRecord.offset() + 1;\n      try {\n        consumer.commitSync(Map.of(tp, new OffsetAndMetadata(offset)));\n        ackRecords.remove(event);\n        logger.atFine().log(\"Committed offset %d on %s\", offset, tp);\n      } catch (KafkaException e) {\n        throw new MessageAcknowledgementException(\n                String.format(\n                        \"Failed to acknowledge offset %d on %s\", offset, tp),\n                e);\n      }\n    }\n```\n\nThe `ackRecords` is a map of events and the associated consumer records, which is needed for managing the acks.",
+      "parentUuid": "c441ecc9_7e1ae26c",
+      "range": {
+        "startLine": 185,
+        "startChar": 28,
+        "endLine": 185,
+        "endChar": 84
+      },
+      "revId": "57ab43d5ce7b521221ddfd0223c24fdcf2eba5aa",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735"
+    },
+    {
+      "unresolved": true,
+      "key": {
         "uuid": "cea26e4f_214087f4",
         "filename": "src/main/java/com/gerritforge/gerrit/plugins/kafka/subscribe/KafkaNativeAcknowledgement.java",
         "patchSetId": 27
