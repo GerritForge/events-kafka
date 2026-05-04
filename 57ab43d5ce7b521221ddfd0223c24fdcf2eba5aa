@@ -41,6 +41,30 @@
       "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735"
     },
     {
+      "unresolved": false,
+      "key": {
+        "uuid": "266e4a3e_a33acaed",
+        "filename": "src/main/java/com/gerritforge/gerrit/plugins/kafka/config/KafkaSubscriberProperties.java",
+        "patchSetId": 27
+      },
+      "lineNbr": 106,
+      "author": {
+        "id": 1015244
+      },
+      "writtenOn": "2026-05-04T15:30:14Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "f93d8aa5_644572e2",
+      "range": {
+        "startLine": 102,
+        "startChar": 0,
+        "endLine": 106,
+        "endChar": 5
+      },
+      "revId": "57ab43d5ce7b521221ddfd0223c24fdcf2eba5aa",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735"
+    },
+    {
       "unresolved": true,
       "key": {
         "uuid": "149de82b_cb76abad",
@@ -54,6 +78,24 @@
       "writtenOn": "2026-05-02T22:21:58Z",
       "side": 1,
       "message": "```suggestion\nclass KafkaAutoAcknowledgement {\n```",
+      "revId": "57ab43d5ce7b521221ddfd0223c24fdcf2eba5aa",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "cf220145_ccfbaf08",
+        "filename": "src/main/java/com/gerritforge/gerrit/plugins/kafka/subscribe/KafkaAutoAcknowledgement.java",
+        "patchSetId": 27
+      },
+      "lineNbr": 16,
+      "author": {
+        "id": 1015244
+      },
+      "writtenOn": "2026-05-04T15:30:14Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "149de82b_cb76abad",
       "revId": "57ab43d5ce7b521221ddfd0223c24fdcf2eba5aa",
       "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735"
     },
@@ -81,6 +123,30 @@
       "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735"
     },
     {
+      "unresolved": false,
+      "key": {
+        "uuid": "aa64bf9a_c1e3d219",
+        "filename": "src/main/java/com/gerritforge/gerrit/plugins/kafka/subscribe/KafkaAutoAcknowledgement.java",
+        "patchSetId": 27
+      },
+      "lineNbr": 22,
+      "author": {
+        "id": 1015244
+      },
+      "writtenOn": "2026-05-04T15:30:14Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "9c025f9a_30742ad3",
+      "range": {
+        "startLine": 17,
+        "startChar": 0,
+        "endLine": 22,
+        "endChar": 3
+      },
+      "revId": "57ab43d5ce7b521221ddfd0223c24fdcf2eba5aa",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735"
+    },
+    {
       "unresolved": true,
       "key": {
         "uuid": "7866c523_3515b21d",
@@ -94,6 +160,30 @@
       "writtenOn": "2026-05-02T22:21:58Z",
       "side": 1,
       "message": "This won\u0027t be needed if [1] is merged.\n\n[1] https://gerrit-review.googlesource.com/c/modules/events-broker/+/578961",
+      "range": {
+        "startLine": 23,
+        "startChar": 0,
+        "endLine": 27,
+        "endChar": 3
+      },
+      "revId": "57ab43d5ce7b521221ddfd0223c24fdcf2eba5aa",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "58e51040_ff7b0a28",
+        "filename": "src/main/java/com/gerritforge/gerrit/plugins/kafka/subscribe/KafkaAutoAcknowledgement.java",
+        "patchSetId": 27
+      },
+      "lineNbr": 27,
+      "author": {
+        "id": 1015244
+      },
+      "writtenOn": "2026-05-04T15:30:14Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "7866c523_3515b21d",
       "range": {
         "startLine": 23,
         "startChar": 0,
@@ -129,6 +219,30 @@
     {
       "unresolved": true,
       "key": {
+        "uuid": "c441ecc9_7e1ae26c",
+        "filename": "src/main/java/com/gerritforge/gerrit/plugins/kafka/subscribe/KafkaEventNativeSubscriber.java",
+        "patchSetId": 27
+      },
+      "lineNbr": 185,
+      "author": {
+        "id": 1015244
+      },
+      "writtenOn": "2026-05-04T15:30:14Z",
+      "side": 1,
+      "message": "Done, however, I am not sure this is actually a relief in terms of JVM heap pressure, since Java still needs to allocate an anonymous class for this lambda.\n\nI\u0027d only prefer the named class for readability and testability, unless there is some other benefit I am not thinking of in having this anonymous class being instantiated?",
+      "parentUuid": "77f76c2a_d3213fa7",
+      "range": {
+        "startLine": 185,
+        "startChar": 28,
+        "endLine": 185,
+        "endChar": 84
+      },
+      "revId": "57ab43d5ce7b521221ddfd0223c24fdcf2eba5aa",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735"
+    },
+    {
+      "unresolved": true,
+      "key": {
         "uuid": "cea26e4f_214087f4",
         "filename": "src/main/java/com/gerritforge/gerrit/plugins/kafka/subscribe/KafkaNativeAcknowledgement.java",
         "patchSetId": 27
@@ -140,6 +254,24 @@
       "writtenOn": "2026-05-02T22:21:58Z",
       "side": 1,
       "message": "The whole class can go away if we merge [1].\n\n[1] https://gerrit-review.googlesource.com/c/modules/events-broker/+/578961",
+      "revId": "57ab43d5ce7b521221ddfd0223c24fdcf2eba5aa",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "df5c8d12_b299fd57",
+        "filename": "src/main/java/com/gerritforge/gerrit/plugins/kafka/subscribe/KafkaNativeAcknowledgement.java",
+        "patchSetId": 27
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1015244
+      },
+      "writtenOn": "2026-05-04T15:30:14Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "cea26e4f_214087f4",
       "revId": "57ab43d5ce7b521221ddfd0223c24fdcf2eba5aa",
       "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735"
     },
@@ -157,6 +289,30 @@
       "writtenOn": "2026-05-02T22:21:58Z",
       "side": 1,
       "message": "This should never be called concurrently from different threads. Is the `AtomicBoolean` really needed here?",
+      "range": {
+        "startLine": 40,
+        "startChar": 8,
+        "endLine": 40,
+        "endChar": 40
+      },
+      "revId": "57ab43d5ce7b521221ddfd0223c24fdcf2eba5aa",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "c1064f03_053c7542",
+        "filename": "src/main/java/com/gerritforge/gerrit/plugins/kafka/subscribe/KafkaNativeAcknowledgement.java",
+        "patchSetId": 27
+      },
+      "lineNbr": 40,
+      "author": {
+        "id": 1015244
+      },
+      "writtenOn": "2026-05-04T15:30:14Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "ec7ade66_3db74717",
       "range": {
         "startLine": 40,
         "startChar": 8,
@@ -190,6 +346,30 @@
       "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735"
     },
     {
+      "unresolved": false,
+      "key": {
+        "uuid": "d8a9a3c7_a95dbffa",
+        "filename": "src/main/java/com/gerritforge/gerrit/plugins/kafka/subscribe/KafkaNativeAcknowledgement.java",
+        "patchSetId": 27
+      },
+      "lineNbr": 41,
+      "author": {
+        "id": 1015244
+      },
+      "writtenOn": "2026-05-04T15:30:14Z",
+      "side": 1,
+      "message": "Yes, the Consumer can poll records from multiple partitions of the same topic.\nAlso, rebalancing might cause partitions assigned to the consumer to change over time.\n\nThis has now moved away from this class, and it is an anonymous class instantiated by the `ReceiverJob`.",
+      "parentUuid": "a2463505_5b48dae1",
+      "range": {
+        "startLine": 41,
+        "startChar": 6,
+        "endLine": 41,
+        "endChar": 97
+      },
+      "revId": "57ab43d5ce7b521221ddfd0223c24fdcf2eba5aa",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735"
+    },
+    {
       "unresolved": true,
       "key": {
         "uuid": "7e0eb440_3c7d766d",
@@ -203,6 +383,30 @@
       "writtenOn": "2026-05-01T22:38:10Z",
       "side": 1,
       "message": "**Gemini**: Logging Verbosity for KafkaNativeAcknowledgement.ack(): The log.atInfo().log(\"Committed offset %d on %s\", offset, tp); message is logged for every successful offset commit. In a high-throughput environment, this can lead to excessive log noise, obscuring more critical information.\n\nI agree that the info logging is excessive here.",
+      "range": {
+        "startLine": 49,
+        "startChar": 10,
+        "endLine": 49,
+        "endChar": 16
+      },
+      "revId": "57ab43d5ce7b521221ddfd0223c24fdcf2eba5aa",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "0d5b1c86_948fa666",
+        "filename": "src/main/java/com/gerritforge/gerrit/plugins/kafka/subscribe/KafkaNativeAcknowledgement.java",
+        "patchSetId": 27
+      },
+      "lineNbr": 49,
+      "author": {
+        "id": 1015244
+      },
+      "writtenOn": "2026-05-04T15:30:14Z",
+      "side": 1,
+      "message": "Raised to `atFine`.",
+      "parentUuid": "7e0eb440_3c7d766d",
       "range": {
         "startLine": 49,
         "startChar": 10,
@@ -236,6 +440,30 @@
       "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735"
     },
     {
+      "unresolved": false,
+      "key": {
+        "uuid": "7a081b65_be4fb5e9",
+        "filename": "src/main/java/com/gerritforge/gerrit/plugins/kafka/subscribe/KafkaNativeAcknowledgement.java",
+        "patchSetId": 27
+      },
+      "lineNbr": 56,
+      "author": {
+        "id": 1015244
+      },
+      "writtenOn": "2026-05-04T15:30:14Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "8d57ac08_214660f1",
+      "range": {
+        "startLine": 52,
+        "startChar": 0,
+        "endLine": 56,
+        "endChar": 3
+      },
+      "revId": "57ab43d5ce7b521221ddfd0223c24fdcf2eba5aa",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735"
+    },
+    {
       "unresolved": true,
       "key": {
         "uuid": "c90cb982_0dfb05e4",
@@ -249,6 +477,30 @@
       "writtenOn": "2026-05-02T22:21:58Z",
       "side": 1,
       "message": "10 seconds seems a long time: does really Kafka take that much to send/receive messages?\n\n\n\n```suggestion\n  private static final Duration WAIT_FOR_POLL_TIMEOUT \u003d Duration.ofSeconds(1);\n```",
+      "range": {
+        "startLine": 47,
+        "startChar": 56,
+        "endLine": 47,
+        "endChar": 78
+      },
+      "revId": "57ab43d5ce7b521221ddfd0223c24fdcf2eba5aa",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "753d8400_8da9fb86",
+        "filename": "src/test/java/com/gerritforge/gerrit/plugins/kafka/ManualCommitIT.java",
+        "patchSetId": 27
+      },
+      "lineNbr": 47,
+      "author": {
+        "id": 1015244
+      },
+      "writtenOn": "2026-05-04T15:30:14Z",
+      "side": 1,
+      "message": "Good point. `EventConsumerIT` sets this to `30 seconds`.\nThat really seemed excessive, so I lowered it to `10 seconds`.\n\nI will set this to `1` seconds for now. let\u0027s see if tests get flaky for some reason.\n\nDone.",
+      "parentUuid": "c90cb982_0dfb05e4",
       "range": {
         "startLine": 47,
         "startChar": 56,
@@ -282,6 +534,30 @@
       "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735"
     },
     {
+      "unresolved": false,
+      "key": {
+        "uuid": "f7f3793b_0e249ab1",
+        "filename": "src/test/java/com/gerritforge/gerrit/plugins/kafka/ManualCommitIT.java",
+        "patchSetId": 27
+      },
+      "lineNbr": 90,
+      "author": {
+        "id": 1015244
+      },
+      "writtenOn": "2026-05-04T15:30:14Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "5508d23a_0e975374",
+      "range": {
+        "startLine": 70,
+        "startChar": 0,
+        "endLine": 90,
+        "endChar": 3
+      },
+      "revId": "57ab43d5ce7b521221ddfd0223c24fdcf2eba5aa",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735"
+    },
+    {
       "unresolved": true,
       "key": {
         "uuid": "072ff414_06a3596b",
@@ -299,6 +575,24 @@
       "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735"
     },
     {
+      "unresolved": false,
+      "key": {
+        "uuid": "030cf304_b8c8b4cf",
+        "filename": "src/test/java/com/gerritforge/gerrit/plugins/kafka/ManualCommitIT.java",
+        "patchSetId": 27
+      },
+      "lineNbr": 94,
+      "author": {
+        "id": 1015244
+      },
+      "writtenOn": "2026-05-04T15:30:14Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "072ff414_06a3596b",
+      "revId": "57ab43d5ce7b521221ddfd0223c24fdcf2eba5aa",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735"
+    },
+    {
       "unresolved": true,
       "key": {
         "uuid": "a01ffc77_3b1e69e7",
@@ -312,6 +606,30 @@
       "writtenOn": "2026-05-02T07:16:04Z",
       "side": 1,
       "message": "Interesting: so the committed offset may arrive *sometimes* after the ack is performed?",
+      "range": {
+        "startLine": 96,
+        "startChar": 58,
+        "endLine": 96,
+        "endChar": 97
+      },
+      "revId": "57ab43d5ce7b521221ddfd0223c24fdcf2eba5aa",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "a4893097_cfe52064",
+        "filename": "src/test/java/com/gerritforge/gerrit/plugins/kafka/ManualCommitIT.java",
+        "patchSetId": 27
+      },
+      "lineNbr": 96,
+      "author": {
+        "id": 1015244
+      },
+      "writtenOn": "2026-05-04T15:30:14Z",
+      "side": 1,
+      "message": "This condition is not used anymore.",
+      "parentUuid": "a01ffc77_3b1e69e7",
       "range": {
         "startLine": 96,
         "startChar": 58,
@@ -368,6 +686,54 @@
       "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735"
     },
     {
+      "unresolved": false,
+      "key": {
+        "uuid": "5020fb6b_2fbd9084",
+        "filename": "src/test/java/com/gerritforge/gerrit/plugins/kafka/ManualCommitIT.java",
+        "patchSetId": 27
+      },
+      "lineNbr": 105,
+      "author": {
+        "id": 1015244
+      },
+      "writtenOn": "2026-05-04T15:30:14Z",
+      "side": 1,
+      "message": "Acknowledged",
+      "parentUuid": "7594ecc4_aad492e6",
+      "range": {
+        "startLine": 105,
+        "startChar": 29,
+        "endLine": 105,
+        "endChar": 36
+      },
+      "revId": "57ab43d5ce7b521221ddfd0223c24fdcf2eba5aa",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "61867864_1ac1727d",
+        "filename": "src/test/java/com/gerritforge/gerrit/plugins/kafka/ManualCommitIT.java",
+        "patchSetId": 27
+      },
+      "lineNbr": 105,
+      "author": {
+        "id": 1015244
+      },
+      "writtenOn": "2026-05-04T15:30:14Z",
+      "side": 1,
+      "message": "Removed condition.",
+      "parentUuid": "d7d1d9bb_205f5871",
+      "range": {
+        "startLine": 105,
+        "startChar": 38,
+        "endLine": 105,
+        "endChar": 77
+      },
+      "revId": "57ab43d5ce7b521221ddfd0223c24fdcf2eba5aa",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735"
+    },
+    {
       "unresolved": true,
       "key": {
         "uuid": "74991cd7_0b0e111b",
@@ -381,6 +747,30 @@
       "writtenOn": "2026-05-02T07:16:04Z",
       "side": 1,
       "message": "You set thrown at L121, therefore this is always `true` immediately or `false` immediately. I don\u0027t believe there\u0027s any value in waiting for it.",
+      "range": {
+        "startLine": 124,
+        "startChar": 8,
+        "endLine": 124,
+        "endChar": 35
+      },
+      "revId": "57ab43d5ce7b521221ddfd0223c24fdcf2eba5aa",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "9066ba57_578ca33c",
+        "filename": "src/test/java/com/gerritforge/gerrit/plugins/kafka/ManualCommitIT.java",
+        "patchSetId": 27
+      },
+      "lineNbr": 124,
+      "author": {
+        "id": 1015244
+      },
+      "writtenOn": "2026-05-04T15:30:14Z",
+      "side": 1,
+      "message": "Removed condition.",
+      "parentUuid": "74991cd7_0b0e111b",
       "range": {
         "startLine": 124,
         "startChar": 8,
@@ -438,6 +828,30 @@
       "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735"
     },
     {
+      "unresolved": false,
+      "key": {
+        "uuid": "376376d3_5e2f1a89",
+        "filename": "src/test/java/com/gerritforge/gerrit/plugins/kafka/ManualCommitIT.java",
+        "patchSetId": 27
+      },
+      "lineNbr": 132,
+      "author": {
+        "id": 1015244
+      },
+      "writtenOn": "2026-05-04T15:30:14Z",
+      "side": 1,
+      "message": "Acknowledged",
+      "parentUuid": "345a2854_555c097f",
+      "range": {
+        "startLine": 132,
+        "startChar": 24,
+        "endLine": 132,
+        "endChar": 33
+      },
+      "revId": "57ab43d5ce7b521221ddfd0223c24fdcf2eba5aa",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735"
+    },
+    {
       "unresolved": true,
       "key": {
         "uuid": "c193cb82_5d04f898",
@@ -451,6 +865,24 @@
       "writtenOn": "2026-05-02T22:21:58Z",
       "side": 1,
       "message": "This variable isn\u0027t returned externally. The only purpose is to wait for one event to come through. Simply use a `CountDownLatch` that would do the job.\n\n\n\n```suggestion\n    CountDownLatch latch \u003d new CountDownLatch(1);\n```",
+      "revId": "57ab43d5ce7b521221ddfd0223c24fdcf2eba5aa",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "97d2959f_ade622c1",
+        "filename": "src/test/java/com/gerritforge/gerrit/plugins/kafka/ManualCommitIT.java",
+        "patchSetId": 27
+      },
+      "lineNbr": 134,
+      "author": {
+        "id": 1015244
+      },
+      "writtenOn": "2026-05-04T15:30:14Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "c193cb82_5d04f898",
       "revId": "57ab43d5ce7b521221ddfd0223c24fdcf2eba5aa",
       "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735"
     },
@@ -472,6 +904,24 @@
       "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735"
     },
     {
+      "unresolved": false,
+      "key": {
+        "uuid": "5018c8e3_1735d236",
+        "filename": "src/test/java/com/gerritforge/gerrit/plugins/kafka/ManualCommitIT.java",
+        "patchSetId": 27
+      },
+      "lineNbr": 142,
+      "author": {
+        "id": 1015244
+      },
+      "writtenOn": "2026-05-04T15:30:14Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "3769b48b_6eb064a0",
+      "revId": "57ab43d5ce7b521221ddfd0223c24fdcf2eba5aa",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735"
+    },
+    {
       "unresolved": true,
       "key": {
         "uuid": "8b7adf25_6476d5e2",
@@ -485,6 +935,24 @@
       "writtenOn": "2026-05-02T22:21:58Z",
       "side": 1,
       "message": "```suggestion\n      assertThat(latch.await(WAIT_FOR_POLL_TIMEOUT.toMillis(), TimeUnit.MILLISECONDS)).isTrue();\n```",
+      "revId": "57ab43d5ce7b521221ddfd0223c24fdcf2eba5aa",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "534a4191_9b779321",
+        "filename": "src/test/java/com/gerritforge/gerrit/plugins/kafka/ManualCommitIT.java",
+        "patchSetId": 27
+      },
+      "lineNbr": 146,
+      "author": {
+        "id": 1015244
+      },
+      "writtenOn": "2026-05-04T15:30:14Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "8b7adf25_6476d5e2",
       "revId": "57ab43d5ce7b521221ddfd0223c24fdcf2eba5aa",
       "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735"
     },
@@ -512,6 +980,30 @@
       "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735"
     },
     {
+      "unresolved": false,
+      "key": {
+        "uuid": "5358a6cf_ebd74ef9",
+        "filename": "src/test/java/com/gerritforge/gerrit/plugins/kafka/ManualCommitIT.java",
+        "patchSetId": 27
+      },
+      "lineNbr": 147,
+      "author": {
+        "id": 1015244
+      },
+      "writtenOn": "2026-05-04T15:30:14Z",
+      "side": 1,
+      "message": "Removed condition altogether.",
+      "parentUuid": "a3a6f199_d1c473dc",
+      "range": {
+        "startLine": 147,
+        "startChar": 16,
+        "endLine": 147,
+        "endChar": 25
+      },
+      "revId": "57ab43d5ce7b521221ddfd0223c24fdcf2eba5aa",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735"
+    },
+    {
       "unresolved": true,
       "key": {
         "uuid": "a8db4a85_a500d7ec",
@@ -525,6 +1017,30 @@
       "writtenOn": "2026-05-02T07:16:04Z",
       "side": 1,
       "message": "This is totally unused. How are tests supposed to verify the explicit/implicit ack?",
+      "range": {
+        "startLine": 161,
+        "startChar": 61,
+        "endLine": 161,
+        "endChar": 83
+      },
+      "revId": "57ab43d5ce7b521221ddfd0223c24fdcf2eba5aa",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "5cb9a0fc_b7b90932",
+        "filename": "src/test/java/com/gerritforge/gerrit/plugins/kafka/api/KafkaBrokerApiTest.java",
+        "patchSetId": 27
+      },
+      "lineNbr": 161,
+      "author": {
+        "id": 1015244
+      },
+      "writtenOn": "2026-05-04T15:30:14Z",
+      "side": 1,
+      "message": "Explicit/implicit ack is covered by dedicated tests in ManualCommitIT.\nI have added a test here to cover the manual acking too.",
+      "parentUuid": "a8db4a85_a500d7ec",
       "range": {
         "startLine": 161,
         "startChar": 61,
