@@ -18,6 +18,24 @@
       "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735"
     },
     {
+      "unresolved": false,
+      "key": {
+        "uuid": "b831569a_aa6f6459",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 4
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1000000
+      },
+      "writtenOn": "2026-05-05T13:47:48Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "54550611_98ae1bf3",
+      "revId": "94ee5927606506670f4a18d8feeb46de9c6303af",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735"
+    },
+    {
       "unresolved": true,
       "key": {
         "uuid": "bc3abf61_994fa9de",
@@ -31,6 +49,30 @@
       "writtenOn": "2026-05-05T07:38:32Z",
       "side": 1,
       "message": "This constructor does not seem to be used anywhere",
+      "range": {
+        "startLine": 34,
+        "startChar": 0,
+        "endLine": 36,
+        "endChar": 2
+      },
+      "revId": "94ee5927606506670f4a18d8feeb46de9c6303af",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "522e55b0_946e06f7",
+        "filename": "src/test/java/com/gerritforge/gerrit/plugins/kafka/GenericContainerWithPortMappingFix.java",
+        "patchSetId": 4
+      },
+      "lineNbr": 36,
+      "author": {
+        "id": 1000000
+      },
+      "writtenOn": "2026-05-05T13:47:48Z",
+      "side": 1,
+      "message": "Used in `KafkaRestContainer.java:37`",
+      "parentUuid": "bc3abf61_994fa9de",
       "range": {
         "startLine": 34,
         "startChar": 0,
@@ -64,6 +106,30 @@
       "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735"
     },
     {
+      "unresolved": false,
+      "key": {
+        "uuid": "08556d13_1ca80557",
+        "filename": "src/test/java/com/gerritforge/gerrit/plugins/kafka/GenericContainerWithPortMappingFix.java",
+        "patchSetId": 4
+      },
+      "lineNbr": 82,
+      "author": {
+        "id": 1000000
+      },
+      "writtenOn": "2026-05-05T13:47:48Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "df47bdef_88489a7a",
+      "range": {
+        "startLine": 82,
+        "startChar": 19,
+        "endLine": 82,
+        "endChar": 24
+      },
+      "revId": "94ee5927606506670f4a18d8feeb46de9c6303af",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735"
+    },
+    {
       "unresolved": true,
       "key": {
         "uuid": "0356730d_f9affa4c",
@@ -77,6 +143,30 @@
       "writtenOn": "2026-05-05T07:38:32Z",
       "side": 1,
       "message": "All of these imports are unused",
+      "range": {
+        "startLine": 14,
+        "startChar": 0,
+        "endLine": 18,
+        "endChar": 46
+      },
+      "revId": "94ee5927606506670f4a18d8feeb46de9c6303af",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "93a28780_5c61a4a4",
+        "filename": "src/test/java/com/gerritforge/gerrit/plugins/kafka/KafkaContainerProvider.java",
+        "patchSetId": 4
+      },
+      "lineNbr": 18,
+      "author": {
+        "id": 1000000
+      },
+      "writtenOn": "2026-05-05T13:47:48Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "0356730d_f9affa4c",
       "range": {
         "startLine": 14,
         "startChar": 0,
