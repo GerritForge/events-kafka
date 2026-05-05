@@ -267,6 +267,30 @@
     {
       "unresolved": true,
       "key": {
+        "uuid": "e34ddf63_8aa86d84",
+        "filename": "src/main/java/com/gerritforge/gerrit/plugins/kafka/subscribe/KafkaEventNativeSubscriber.java",
+        "patchSetId": 27
+      },
+      "lineNbr": 185,
+      "author": {
+        "id": 1015244
+      },
+      "writtenOn": "2026-05-05T08:09:39Z",
+      "side": 1,
+      "message": "I understand the approach, but I\u0027m not sure this actually improves the heap pressure. Doesn\u0027t it mostly move the allocation somewhere else?\n\nBefore, with either the lambda or a named acknowledgement class, we had one small ack object per consumed record. With this approach, we avoid that object, but we now need to keep a map entry for every unacked record, mapping the event back to the Kafka ConsumerRecord.\n\nI\u0027m not convinced the second one is cheaper, and it also seems to make the lifecycle more complex. The broker now owns a growing map of unacked records. If a client never calls ack(event) or fails before acking, that entry stays around unless we add cleanup logic.\n\nI\u0027m not against the idea, but I\u0027d like to understand whether we know this actually reduces allocation/heap pressure.\n\nCan we discuss?",
+      "parentUuid": "cc0ae49a_f45f6f8c",
+      "range": {
+        "startLine": 185,
+        "startChar": 28,
+        "endLine": 185,
+        "endChar": 84
+      },
+      "revId": "57ab43d5ce7b521221ddfd0223c24fdcf2eba5aa",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735"
+    },
+    {
+      "unresolved": true,
+      "key": {
         "uuid": "cea26e4f_214087f4",
         "filename": "src/main/java/com/gerritforge/gerrit/plugins/kafka/subscribe/KafkaNativeAcknowledgement.java",
         "patchSetId": 27
