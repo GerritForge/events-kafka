@@ -1,0 +1,90 @@
+{
+  "comments": [
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "54550611_98ae1bf3",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 4
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1015244
+      },
+      "writtenOn": "2026-05-05T07:38:32Z",
+      "side": 1,
+      "message": "This patch does not seem to have been formatted with GJF",
+      "revId": "94ee5927606506670f4a18d8feeb46de9c6303af",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "bc3abf61_994fa9de",
+        "filename": "src/test/java/com/gerritforge/gerrit/plugins/kafka/GenericContainerWithPortMappingFix.java",
+        "patchSetId": 4
+      },
+      "lineNbr": 36,
+      "author": {
+        "id": 1015244
+      },
+      "writtenOn": "2026-05-05T07:38:32Z",
+      "side": 1,
+      "message": "This constructor does not seem to be used anywhere",
+      "range": {
+        "startLine": 34,
+        "startChar": 0,
+        "endLine": 36,
+        "endChar": 2
+      },
+      "revId": "94ee5927606506670f4a18d8feeb46de9c6303af",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "df47bdef_88489a7a",
+        "filename": "src/test/java/com/gerritforge/gerrit/plugins/kafka/GenericContainerWithPortMappingFix.java",
+        "patchSetId": 4
+      },
+      "lineNbr": 82,
+      "author": {
+        "id": 1015244
+      },
+      "writtenOn": "2026-05-05T07:38:32Z",
+      "side": 1,
+      "message": "nit: Since this is a generic helper, consider removing the Kafka keyword.\n```suggestion\n\t\t\t\t\"Unable to get mapped port %d from container %s\",\n```",
+      "range": {
+        "startLine": 82,
+        "startChar": 19,
+        "endLine": 82,
+        "endChar": 24
+      },
+      "revId": "94ee5927606506670f4a18d8feeb46de9c6303af",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "0356730d_f9affa4c",
+        "filename": "src/test/java/com/gerritforge/gerrit/plugins/kafka/KafkaContainerProvider.java",
+        "patchSetId": 4
+      },
+      "lineNbr": 18,
+      "author": {
+        "id": 1015244
+      },
+      "writtenOn": "2026-05-05T07:38:32Z",
+      "side": 1,
+      "message": "All of these imports are unused",
+      "range": {
+        "startLine": 14,
+        "startChar": 0,
+        "endLine": 18,
+        "endChar": 46
+      },
+      "revId": "94ee5927606506670f4a18d8feeb46de9c6303af",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735"
+    }
+  ]
+}
