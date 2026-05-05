@@ -291,6 +291,30 @@
     {
       "unresolved": true,
       "key": {
+        "uuid": "213adb55_53f1ff82",
+        "filename": "src/main/java/com/gerritforge/gerrit/plugins/kafka/subscribe/KafkaEventNativeSubscriber.java",
+        "patchSetId": 27
+      },
+      "lineNbr": 185,
+      "author": {
+        "id": 1015244
+      },
+      "writtenOn": "2026-05-05T16:21:58Z",
+      "side": 1,
+      "message": "I tested this approach and it does not work unfortunately.\n\n`Event` does not override `equals() / hashCode() `;\n\nSo to have a successful lookup in the `ackRecords` we would need to have _the same event instance (by id)_, but, this is not possible because, if we did that, we would still close over the context.\n\nAn alternative would be to change the new interface to something like:\n\n```\nvoid accept(T t, MessageAcknowledgement\u003cK\u003e acknowledgement);\n```\n\nThis would allow us to ack by `offset + partition` for example, bypassing the `event` comparison problem.\n\nI don\u0027t like this solution though, I think it is making the interface unnecessarily complex, to fix a problem that, frankly we don\u0027t really know we have yet.\n\nPerhaps we should spend more time in profiling this and making sure this optimisation is necessary?",
+      "parentUuid": "e34ddf63_8aa86d84",
+      "range": {
+        "startLine": 185,
+        "startChar": 28,
+        "endLine": 185,
+        "endChar": 84
+      },
+      "revId": "57ab43d5ce7b521221ddfd0223c24fdcf2eba5aa",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735"
+    },
+    {
+      "unresolved": true,
+      "key": {
         "uuid": "cea26e4f_214087f4",
         "filename": "src/main/java/com/gerritforge/gerrit/plugins/kafka/subscribe/KafkaNativeAcknowledgement.java",
         "patchSetId": 27
