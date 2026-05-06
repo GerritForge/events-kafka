@@ -337,6 +337,30 @@
       "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735"
     },
     {
+      "unresolved": false,
+      "key": {
+        "uuid": "bc984dfd_3a73c59f",
+        "filename": "src/main/java/com/gerritforge/gerrit/plugins/kafka/subscribe/KafkaEventNativeSubscriber.java",
+        "patchSetId": 27
+      },
+      "lineNbr": 185,
+      "author": {
+        "id": 1015244
+      },
+      "writtenOn": "2026-05-06T15:19:06Z",
+      "side": 1,
+      "message": "Done.\nI have tested this locally via gatling and a profiler and it works as expected.",
+      "parentUuid": "f0dc5dd1_0de4d179",
+      "range": {
+        "startLine": 185,
+        "startChar": 28,
+        "endLine": 185,
+        "endChar": 84
+      },
+      "revId": "57ab43d5ce7b521221ddfd0223c24fdcf2eba5aa",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735"
+    },
+    {
       "unresolved": true,
       "key": {
         "uuid": "cea26e4f_214087f4",
