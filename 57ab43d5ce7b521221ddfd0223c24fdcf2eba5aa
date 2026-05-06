@@ -315,6 +315,30 @@
     {
       "unresolved": true,
       "key": {
+        "uuid": "f0dc5dd1_0de4d179",
+        "filename": "src/main/java/com/gerritforge/gerrit/plugins/kafka/subscribe/KafkaEventNativeSubscriber.java",
+        "patchSetId": 27
+      },
+      "lineNbr": 185,
+      "author": {
+        "id": 1000000
+      },
+      "writtenOn": "2026-05-06T12:23:08Z",
+      "side": 1,
+      "message": "\u003e I tested this approach and it does not work unfortunately.\n\u003e \n\u003e `Event` does not override `equals() / hashCode() `;\n\nAs discussed offline, that\u0027s not necessarily needed as long as we are clear that the event passed to the ack is *the same instance* of the one received, which I would expect the client to respect.\n\n\u003e So to have a successful lookup in the `ackRecords` we would need to have _the same event instance (by id)_, but, this is not possible because, if we did that, we would still close over the context.\n\nIt is possible, as discussed, the issue was in the test, not the code.",
+      "parentUuid": "213adb55_53f1ff82",
+      "range": {
+        "startLine": 185,
+        "startChar": 28,
+        "endLine": 185,
+        "endChar": 84
+      },
+      "revId": "57ab43d5ce7b521221ddfd0223c24fdcf2eba5aa",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735"
+    },
+    {
+      "unresolved": true,
+      "key": {
         "uuid": "cea26e4f_214087f4",
         "filename": "src/main/java/com/gerritforge/gerrit/plugins/kafka/subscribe/KafkaNativeAcknowledgement.java",
         "patchSetId": 27
