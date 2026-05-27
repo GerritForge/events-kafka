@@ -1,0 +1,81 @@
+module(name = "gerrit-events-kafka")
+
+bazel_dep(name = "rules_java", version = "8.16.1")
+bazel_dep(name = "rules_jvm_external", version = "6.10")
+
+maven = use_extension("@rules_jvm_external//:extensions.bzl", "maven")
+
+KAFKA_CLIENTS_VERSION = "3.7.1"
+TESTCONTAINERS_VERSION = "1.15.3"
+DOCKER_JAVA_VERS = "3.2.8"
+
+maven.artifact(
+    name = "events-kafka_plugin_deps",
+    artifact = "httpasyncclient",
+    exclusions = [
+        "commons-codec:commons-codec",
+        "commons-logging:commons-logging",
+        "org.apache.httpcomponents:httpclient",
+        "org.apache.httpcomponents:httpcore",
+        "org.slf4j:jcl-over-slf4j",
+    ],
+    group = "org.apache.httpcomponents",
+    version = "4.1.4",
+)
+
+maven.artifact(
+    name = "events-kafka_plugin_deps",
+    artifact = "httpcore-nio",
+    exclusions = [
+        "org.apache.httpcomponents:httpcore",
+    ],
+    group = "org.apache.httpcomponents",
+    version = "4.4.12",
+)
+
+maven.artifact(
+    name = "events-kafka_plugin_deps",
+    artifact = "kafka-clients",
+    exclusions = [
+        "org.slf4j:slf4j-api",
+    ],
+    group = "org.apache.kafka",
+    version = KAFKA_CLIENTS_VERSION,
+)
+
+maven.install(
+    name = "events-kafka_plugin_deps",
+    artifacts = [
+        "com.fasterxml.jackson.core:jackson-annotations:2.10.3",
+        "com.github.docker-java:docker-java-api:" + DOCKER_JAVA_VERS,
+        "com.github.docker-java:docker-java-transport:" + DOCKER_JAVA_VERS,
+        "net.java.dev.jna:jna:5.18.1",
+        "org.rnorth.duct-tape:duct-tape:1.0.8",
+        "org.rnorth.visible-assertions:visible-assertions:2.1.2",
+        "org.testcontainers:kafka:" + TESTCONTAINERS_VERSION,
+        "org.testcontainers:testcontainers:" + TESTCONTAINERS_VERSION,
+    ],
+    duplicate_version_warning = "error",
+    excluded_artifacts = [
+        "com.google.code.findbugs:jsr305",
+        "com.google.errorprone:error_prone_annotations",
+        "com.google.guava:failureaccess",
+        "com.google.guava:guava",
+        "com.google.j2objc:j2objc-annotations",
+        "commons-codec:commons-codec",
+        "commons-io:commons-io",
+        "org.apache.httpcomponents:httpclient",
+        "org.apache.httpcomponents:httpcore",
+        "org.checkerframework:checker-qual",
+        "org.slf4j:slf4j-api",
+    ],
+    fail_if_repin_required = True,
+    fail_on_missing_checksum = True,
+    fetch_sources = True,
+    lock_file = "//:events-kafka_plugin_deps.lock.json",
+    repositories = [
+        "https://repo1.maven.org/maven2",
+    ],
+    version_conflict_policy = "pinned",
+)
+use_repo(maven, "events-kafka_plugin_deps")
