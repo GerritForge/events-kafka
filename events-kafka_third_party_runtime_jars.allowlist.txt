@@ -1,0 +1,6 @@
+httpasyncclient
+httpcore-nio
+kafka-clients
+lz4-java
+snappy-java
+zstd-jni-1.5.6
