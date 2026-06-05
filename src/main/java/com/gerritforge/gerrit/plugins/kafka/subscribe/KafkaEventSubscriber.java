@@ -13,13 +13,17 @@ package com.gerritforge.gerrit.plugins.kafka.subscribe;
 
 import com.gerritforge.gerrit.eventbroker.AckAwareConsumer;
 import com.google.gerrit.server.events.Event;
+import com.google.inject.assistedinject.Assisted;
 import java.util.Optional;
 
 /** Generic interface to a Kafka topic subscriber. */
 public interface KafkaEventSubscriber {
 
   public interface Factory {
-    KafkaEventSubscriber create(Optional<String> externalGroupId);
+    KafkaEventSubscriber create(
+        @Assisted("externalGroupId") Optional<String> externalGroupId,
+        @Assisted("partition") Optional<Integer> partition,
+        @Assisted("logicalPartition") Optional<String> logicalPartition);
   }
 
   /**
@@ -46,6 +50,20 @@ public interface KafkaEventSubscriber {
    * @return Kafka topic name.
    */
   String getTopic();
+
+  /**
+   * Returns the current subscribed partition.
+   *
+   * @return Kafka partition id.
+   */
+  Optional<Integer> getPartition();
+
+  /**
+   * Returns the current subscribed logical partition.
+   *
+   * @return logical partition value.
+   */
+  Optional<String> getLogicalPartition();
 
   /** Reset the offset for reading incoming Kafka messages of the topic. */
   void resetOffset();

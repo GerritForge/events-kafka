@@ -28,6 +28,7 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Random;
+import java.util.Set;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.atomic.AtomicBoolean;
 import org.apache.kafka.clients.consumer.Consumer;
@@ -48,6 +49,8 @@ public class KafkaEventNativeSubscriber implements KafkaEventSubscriber {
 
   private final Deserializer<Event> valueDeserializer;
   private final KafkaSubscriberProperties configuration;
+  private final Optional<Integer> partition;
+  private final Optional<String> logicalPartition;
   private final ExecutorService executor;
   private final KafkaEventSubscriberMetrics subscriberMetrics;
   private final KafkaConsumerFactory consumerFactory;
@@ -69,7 +72,9 @@ public class KafkaEventNativeSubscriber implements KafkaEventSubscriber {
       OneOffRequestContext oneOffCtx,
       @ConsumerExecutor ExecutorService executor,
       KafkaEventSubscriberMetrics subscriberMetrics,
-      @Assisted Optional<String> externalGroupId) {
+      @Assisted("externalGroupId") Optional<String> externalGroupId,
+      @Assisted("partition") Optional<Integer> partition,
+      @Assisted("logicalPartition") Optional<String> logicalPartition) {
 
     this.oneOffCtx = oneOffCtx;
     this.executor = executor;
@@ -79,6 +84,8 @@ public class KafkaEventNativeSubscriber implements KafkaEventSubscriber {
     this.valueDeserializer = valueDeserializer;
     this.externalGroupId = externalGroupId;
     this.configuration = (KafkaSubscriberProperties) configuration.clone();
+    this.partition = partition;
+    this.logicalPartition = logicalPartition;
     externalGroupId.ifPresent(gid -> this.configuration.setProperty("group.id", gid));
   }
 
@@ -90,8 +97,8 @@ public class KafkaEventNativeSubscriber implements KafkaEventSubscriber {
     this.topic = topic;
     this.messageProcessor = acknowledgementConsumer;
     logger.atInfo().log(
-        "Kafka consumer subscribing to topic alias [%s] for event topic [%s] with groupId [%s]",
-        topic, topic, configuration.getGroupId());
+        "Kafka consumer subscribing to topic alias [%s][%s] for event topic [%s] with groupId [%s]",
+        topic, topic, partition.map(p -> "partition:" + p).orElse(""), configuration.getGroupId());
     runReceiver(consumerFactory.create(configuration, keyDeserializer));
   }
 
@@ -100,7 +107,11 @@ public class KafkaEventNativeSubscriber implements KafkaEventSubscriber {
     try {
       Thread.currentThread()
           .setContextClassLoader(KafkaEventNativeSubscriber.class.getClassLoader());
-      consumer.subscribe(Collections.singleton(topic));
+      if (partition.isPresent()) {
+        consumer.assign(Set.of(new TopicPartition(topic, partition.get())));
+      } else {
+        consumer.subscribe(Collections.singleton(topic));
+      }
       receiver = new ReceiverJob(consumer);
       executor.execute(receiver);
     } finally {
@@ -131,6 +142,19 @@ public class KafkaEventNativeSubscriber implements KafkaEventSubscriber {
   @Override
   public String getTopic() {
     return topic;
+  }
+
+  /* (non-Javadoc)
+   * @see com.gerritforge.gerrit.plugins.kafka.subscribe.KafkaEventSubscriber#getPartition()
+   */
+  @Override
+  public Optional<Integer> getPartition() {
+    return partition;
+  }
+
+  @Override
+  public Optional<String> getLogicalPartition() {
+    return logicalPartition;
   }
 
   /* (non-Javadoc)

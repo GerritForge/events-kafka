@@ -43,6 +43,7 @@ Additional properties
       [Confluent REST-API Proxy](https://docs.confluent.io/platform/current/kafka-rest/index.html).
       **NOTE**: `plugin.@PLUGIN@.restApiUri` is mandatory when using a `REST` client type.
       **NOTE**: explicit offset commits are supported only by the `NATIVE` client type.
+      **NOTE**: partition-aware subscriptions are supported only by the `NATIVE` client type.
       With the `REST` client type, consumed messages are acknowledged automatically by the
       REST proxy.
 	Default: `NATIVE`
