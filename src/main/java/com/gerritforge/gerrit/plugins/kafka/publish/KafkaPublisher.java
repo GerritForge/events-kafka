@@ -21,6 +21,7 @@ import com.google.gson.Gson;
 import com.google.gson.JsonObject;
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
+import java.util.Optional;
 
 @Singleton
 public class KafkaPublisher implements EventListener {
@@ -53,6 +54,10 @@ public class KafkaPublisher implements EventListener {
 
   public ListenableFuture<Boolean> publish(String topic, Event event) {
     return session.publish(topic, getPayload(event));
+  }
+
+  public ListenableFuture<Boolean> publish(String topic, Optional<Integer> partition, Event event) {
+    return session.publish(topic, partition, getPayload(event));
   }
 
   private String getPayload(Event event) {

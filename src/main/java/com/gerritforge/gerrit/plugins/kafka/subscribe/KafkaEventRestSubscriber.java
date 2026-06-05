@@ -94,7 +94,12 @@ public class KafkaEventRestSubscriber implements KafkaEventSubscriber {
       @ConsumerExecutor ExecutorService executor,
       KafkaEventSubscriberMetrics subscriberMetrics,
       KafkaRestClient.Factory restClientFactory,
-      @Assisted Optional<String> externalGroupId) {
+      @Assisted Optional<String> externalGroupId,
+      @Assisted Optional<Integer> partition) {
+    if (partition.isPresent()) {
+      throw new UnsupportedOperationException(
+          "Partition-aware subscriptions are not supported with clientType=REST");
+    }
 
     this.oneOffCtx = oneOffCtx;
     this.executor = executor;
@@ -159,6 +164,11 @@ public class KafkaEventRestSubscriber implements KafkaEventSubscriber {
   @Override
   public String getTopic() {
     return topic;
+  }
+
+  @Override
+  public Optional<Integer> getPartition() {
+    return Optional.empty();
   }
 
   /* (non-Javadoc)
