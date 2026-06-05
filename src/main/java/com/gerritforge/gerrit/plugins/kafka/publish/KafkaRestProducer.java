@@ -138,8 +138,10 @@ public class KafkaRestProducer implements Producer<String, String> {
   }
 
   private String getRecordAsJson(ProducerRecord<String, String> record) {
+    String partition =
+        record.partition() == null ? "" : String.format("\"partition\":%d,", record.partition());
     return String.format(
-        "{\"records\":[{\"key\":\"%s\",\"value\":%s}]}", record.key(), record.value());
+        "{\"records\":[{%s\"key\":\"%s\",\"value\":%s}]}", partition, record.key(), record.value());
   }
 
   private <T> T unsupported() {

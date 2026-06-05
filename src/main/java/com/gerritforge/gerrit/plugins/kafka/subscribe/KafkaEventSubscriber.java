@@ -19,7 +19,7 @@ import java.util.Optional;
 public interface KafkaEventSubscriber {
 
   public interface Factory {
-    KafkaEventSubscriber create(Optional<String> externalGroupId);
+    KafkaEventSubscriber create(Optional<String> externalGroupId, Optional<Integer> partition);
   }
 
   /**
@@ -46,6 +46,13 @@ public interface KafkaEventSubscriber {
    * @return Kafka topic name.
    */
   String getTopic();
+
+  /**
+   * Returns the current subscribed partition.
+   *
+   * @return Kafka partition id.
+   */
+  Optional<Integer> getPartition();
 
   /** Reset the offset for reading incoming Kafka messages of the topic. */
   void resetOffset();

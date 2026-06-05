@@ -23,6 +23,7 @@ import com.google.inject.Provider;
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.util.Objects;
+import java.util.Optional;
 import java.util.concurrent.Future;
 import org.apache.kafka.clients.producer.Producer;
 import org.apache.kafka.clients.producer.ProducerRecord;
@@ -123,17 +124,25 @@ public final class KafkaSession {
   }
 
   public ListenableFuture<Boolean> publish(String topic, String messageBody) {
-    if (properties.isSendAsync()) {
-      return publishAsync(topic, messageBody);
-    }
-    return publishSync(topic, messageBody);
+    return publish(topic, Optional.empty(), messageBody);
   }
 
-  private ListenableFuture<Boolean> publishSync(String topic, String messageBody) {
+  public ListenableFuture<Boolean> publish(
+      String topic, Optional<Integer> partition, String messageBody) {
+    if (properties.isSendAsync()) {
+      return publishAsync(topic, partition, messageBody);
+    }
+    return publishSync(topic, partition, messageBody);
+  }
+
+  private ListenableFuture<Boolean> publishSync(
+      String topic, Optional<Integer> partition, String messageBody) {
     SettableFuture<Boolean> resultF = SettableFuture.create();
     try {
       Future<RecordMetadata> future =
-          producer.send(new ProducerRecord<>(topic, "" + System.nanoTime(), messageBody));
+          producer.send(
+              new ProducerRecord<>(
+                  topic, partition.orElse(null), Long.toString(System.nanoTime()), messageBody));
       RecordMetadata metadata = future.get();
       LOGGER.debug("The offset of the record we just sent is: {}", metadata.offset());
       publisherMetrics.incrementBrokerPublishedMessage();
@@ -147,11 +156,13 @@ public final class KafkaSession {
     }
   }
 
-  private ListenableFuture<Boolean> publishAsync(String topic, String messageBody) {
+  private ListenableFuture<Boolean> publishAsync(
+      String topic, Optional<Integer> partition, String messageBody) {
     try {
       Future<RecordMetadata> future =
           producer.send(
-              new ProducerRecord<>(topic, Long.toString(System.nanoTime()), messageBody),
+              new ProducerRecord<>(
+                  topic, partition.orElse(null), Long.toString(System.nanoTime()), messageBody),
               (metadata, e) -> {
                 if (metadata != null && e == null) {
                   LOGGER.debug("The offset of the record we just sent is: {}", metadata.offset());
