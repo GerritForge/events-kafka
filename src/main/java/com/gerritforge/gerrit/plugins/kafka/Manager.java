@@ -18,6 +18,7 @@ import com.gerritforge.gerrit.plugins.kafka.publish.KafkaPublisher;
 import com.google.gerrit.extensions.events.LifecycleListener;
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
+import java.util.Optional;
 import java.util.Set;
 
 @Singleton
@@ -50,10 +51,19 @@ public class Manager implements LifecycleListener {
     consumersWithGroupId.forEach(
         topicSubscriberWithGroupId -> {
           TopicSubscriber topicSubscriber = topicSubscriberWithGroupId.topicSubscriber();
-          brokerApi.receiveAsync(
-              topicSubscriber.topic(),
-              topicSubscriberWithGroupId.groupId(),
-              topicSubscriber.consumer());
+          Optional<String> partition = topicSubscriberWithGroupId.partition();
+          if (partition.isPresent()) {
+            brokerApi.receiveAsyncWithPartition(
+                topicSubscriber.topic(),
+                partition.get(),
+                topicSubscriberWithGroupId.groupId(),
+                topicSubscriber.consumer());
+          } else {
+            brokerApi.receiveAsync(
+                topicSubscriber.topic(),
+                topicSubscriberWithGroupId.groupId(),
+                topicSubscriber.consumer());
+          }
         });
   }
 

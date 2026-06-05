@@ -17,8 +17,10 @@ import static com.google.common.truth.Truth.assertThat;
 import static org.junit.Assert.assertThrows;
 import static org.junit.Assume.assumeTrue;
 import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.when;
 
 import com.gerritforge.gerrit.eventbroker.AckAwareConsumer;
+import com.gerritforge.gerrit.eventbroker.EventsBrokerConfiguration;
 import com.gerritforge.gerrit.eventbroker.MessageAcknowledgement;
 import com.gerritforge.gerrit.plugins.kafka.KafkaContainerProvider;
 import com.gerritforge.gerrit.plugins.kafka.KafkaRestContainer;
@@ -50,10 +52,15 @@ import com.google.inject.Singleton;
 import com.google.inject.TypeLiteral;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Optional;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
+import org.apache.kafka.clients.admin.Admin;
+import org.apache.kafka.clients.admin.NewTopic;
+import org.apache.kafka.clients.producer.KafkaProducer;
 import org.apache.kafka.clients.producer.Producer;
 import org.apache.kafka.clients.producer.ProducerConfig;
+import org.apache.kafka.clients.producer.ProducerRecord;
 import org.junit.After;
 import org.junit.AfterClass;
 import org.junit.Before;
@@ -133,6 +140,7 @@ public class KafkaBrokerApiTest {
           .toInstance(mock(OneOffRequestContext.class, Answers.RETURNS_DEEP_STUBS));
 
       bind(KafkaProperties.class).toInstance(kafkaProperties);
+      bind(EventsBrokerConfiguration.class).toInstance(mock(EventsBrokerConfiguration.class));
       bind(Log4JKafkaMessageLogger.class)
           .toInstance(mock(Log4JKafkaMessageLogger.class, Answers.RETURNS_DEEP_STUBS));
       bind(KafkaSession.class).in(Scopes.SINGLETON);
@@ -403,6 +411,64 @@ public class KafkaBrokerApiTest {
   }
 
   @Test
+  public void shouldConsumeOnlyFromRequestedPartition() throws Exception {
+    assumeTrue(clientType == ClientType.NATIVE);
+    connectToKafka(
+        new KafkaProperties(
+            true, clientType, getKafkaRestApiUriString(), restApiUsername, restApiPassword));
+    KafkaBrokerApi kafkaBrokerApi = injector.getInstance(KafkaBrokerApi.class);
+    EventsBrokerConfiguration configuration = injector.getInstance(EventsBrokerConfiguration.class);
+    String testTopic = testTopic();
+    String groupId = "group_id_1";
+    TestConsumer testConsumer = new TestConsumer(1);
+    Event partition0Event = new ProjectCreatedEvent();
+    partition0Event.instanceId = "partition-0";
+    Event partition1Event = new ProjectCreatedEvent();
+    partition1Event.instanceId = "partition-1";
+
+    createTopic(testTopic, 2);
+    when(configuration.getPartitionsForTopic(testTopic))
+        .thenReturn(List.of("partition-0", "partition-1"));
+    kafkaBrokerApi.receiveAsyncWithPartition(testTopic, "partition-1", groupId, testConsumer);
+    sendToPartition(testTopic, 0, partition0Event);
+    sendToPartition(testTopic, 1, partition1Event);
+
+    assertThat(testConsumer.await()).isTrue();
+    assertThat(testConsumer.messages).hasSize(1);
+    assertThat(gson.toJson(testConsumer.messages.get(0))).isEqualTo(gson.toJson(partition1Event));
+
+    assertNoMoreExpectedMessages(testConsumer);
+  }
+
+  @Test
+  public void shouldPublishToConfiguredPartition() throws Exception {
+    assumeTrue(clientType == ClientType.NATIVE);
+    connectToKafka(
+        new KafkaProperties(
+            true, clientType, getKafkaRestApiUriString(), restApiUsername, restApiPassword));
+    KafkaBrokerApi kafkaBrokerApi = injector.getInstance(KafkaBrokerApi.class);
+    EventsBrokerConfiguration configuration = injector.getInstance(EventsBrokerConfiguration.class);
+    String testTopic = testTopic();
+    String groupId = "group_id_1";
+    TestConsumer testConsumer = new TestConsumer(1);
+    Event testEventMessage = new ProjectCreatedEvent();
+    testEventMessage.instanceId = TEST_INSTANCE_ID;
+
+    createTopic(testTopic, 2);
+    when(configuration.getEventPropertyForTopic(testTopic)).thenReturn("type");
+    when(configuration.getPartitionsForTopic(testTopic))
+        .thenReturn(List.of("other-event", "project-created"));
+    kafkaBrokerApi.receiveAsyncWithPartition(testTopic, "project-created", groupId, testConsumer);
+    kafkaBrokerApi.send(testTopic, testEventMessage);
+
+    assertThat(testConsumer.await()).isTrue();
+    assertThat(testConsumer.messages).hasSize(1);
+    assertThat(gson.toJson(testConsumer.messages.get(0))).isEqualTo(gson.toJson(testEventMessage));
+
+    assertNoMoreExpectedMessages(testConsumer);
+  }
+
+  @Test
   public void shouldRegisterConsumerWithoutExternalGroupId() {
     connectToKafka(
         new KafkaProperties(
@@ -436,6 +502,28 @@ public class KafkaBrokerApiTest {
     assertThat(kafkaBrokerApi.topicSubscribersWithGroupId())
         .containsExactly(
             topicSubscriberWithGroupId(groupId, topicSubscriber(testTopic, testConsumer)));
+  }
+
+  @Test
+  public void shouldRegisterPartitionConsumerWithLogicalPartition() throws Exception {
+    assumeTrue(clientType == ClientType.NATIVE);
+    connectToKafka(
+        new KafkaProperties(
+            false, clientType, getKafkaRestApiUriString(), restApiUsername, restApiPassword));
+    KafkaBrokerApi kafkaBrokerApi = injector.getInstance(KafkaBrokerApi.class);
+    EventsBrokerConfiguration configuration = injector.getInstance(EventsBrokerConfiguration.class);
+    String testTopic = testTopic();
+    String groupId = "group_id_1";
+    TestConsumer testConsumer = new TestConsumer(1);
+
+    createTopic(testTopic, 1);
+    when(configuration.getPartitionsForTopic(testTopic)).thenReturn(List.of("partition"));
+    kafkaBrokerApi.receiveAsyncWithPartition(testTopic, "partition", groupId, testConsumer);
+
+    assertThat(kafkaBrokerApi.topicSubscribersWithGroupId())
+        .containsExactly(
+            topicSubscriberWithGroupId(
+                groupId, topicSubscriber(testTopic, testConsumer), Optional.of("partition")));
   }
 
   @Test
@@ -505,6 +593,19 @@ public class KafkaBrokerApiTest {
 
   protected String getKafkaRestApiUriString() {
     return null;
+  }
+
+  private void createTopic(String topic, int partitions) throws Exception {
+    try (Admin admin = Admin.create(injector.getInstance(KafkaProperties.class))) {
+      admin.createTopics(List.of(new NewTopic(topic, partitions, (short) 1))).all().get();
+    }
+  }
+
+  private void sendToPartition(String topic, int partition, Event event) throws Exception {
+    try (Producer<String, String> producer =
+        new KafkaProducer<>(injector.getInstance(KafkaProperties.class))) {
+      producer.send(new ProducerRecord<>(topic, partition, null, gson.toJson(event))).get();
+    }
   }
 
   private void assertNoMoreExpectedMessages(TestConsumer testConsumer) {
