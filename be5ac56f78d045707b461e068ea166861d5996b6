@@ -1,0 +1,27 @@
+{
+  "comments": [
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "cab5c78a_5d6adde1",
+        "filename": "src/main/java/com/gerritforge/gerrit/plugins/kafka/api/KafkaBrokerApi.java",
+        "patchSetId": 3
+      },
+      "lineNbr": 178,
+      "author": {
+        "id": 1012541
+      },
+      "writtenOn": "2026-06-10T17:32:16Z",
+      "side": 1,
+      "message": "This can throw an unexpected exception",
+      "range": {
+        "startLine": 178,
+        "startChar": 76,
+        "endLine": 178,
+        "endChar": 87
+      },
+      "revId": "be5ac56f78d045707b461e068ea166861d5996b6",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735"
+    }
+  ]
+}
