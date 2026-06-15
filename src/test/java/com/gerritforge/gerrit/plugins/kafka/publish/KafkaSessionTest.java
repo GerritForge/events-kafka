@@ -12,8 +12,11 @@
 package com.gerritforge.gerrit.plugins.kafka.publish;
 
 import static com.google.common.truth.Truth.assertThat;
+import static org.junit.Assert.assertThrows;
 import static org.mockito.Mockito.any;
+import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.only;
+import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
@@ -23,9 +26,13 @@ import com.gerritforge.gerrit.plugins.kafka.session.KafkaProducerProvider;
 import com.gerritforge.gerrit.plugins.kafka.session.KafkaSession;
 import com.gerritforge.gerrit.plugins.kafka.session.Log4JKafkaMessageLogger;
 import com.google.common.util.concurrent.Futures;
+import java.util.List;
+import java.util.Optional;
 import org.apache.kafka.clients.producer.Callback;
 import org.apache.kafka.clients.producer.Producer;
+import org.apache.kafka.clients.producer.ProducerRecord;
 import org.apache.kafka.clients.producer.RecordMetadata;
+import org.apache.kafka.common.PartitionInfo;
 import org.apache.kafka.common.TopicPartition;
 import org.junit.Before;
 import org.junit.Test;
@@ -37,6 +44,9 @@ import org.mockito.junit.MockitoJUnitRunner;
 
 @RunWith(MockitoJUnitRunner.class)
 public class KafkaSessionTest {
+  private static final int PARTITION = 1;
+  private static final String PARTITION_ERROR = "Kafka partition %d does not exist for topic %s";
+
   KafkaSession objectUnderTest;
   @Mock Producer<String, String> kafkaProducer;
   @Mock KafkaProducerProvider producerProvider;
@@ -45,6 +55,7 @@ public class KafkaSessionTest {
 
   @Mock Log4JKafkaMessageLogger msgLog;
   @Captor ArgumentCaptor<Callback> callbackCaptor;
+  @Captor ArgumentCaptor<ProducerRecord<String, String>> recordCaptor;
 
   RecordMetadata recordMetadata;
   String message = "sample_message";
@@ -78,6 +89,53 @@ public class KafkaSessionTest {
     objectUnderTest.connect();
     objectUnderTest.publish(message);
     verify(msgLog).log(topic, message);
+  }
+
+  @Test
+  public void shouldPublishSyncMessageToPartition() {
+    when(kafkaProducer.send(any())).thenReturn(Futures.immediateFuture(recordMetadata));
+    connectWithPartition();
+
+    objectUnderTest.publish(topic, Optional.of(PARTITION), message);
+
+    verify(kafkaProducer).send(recordCaptor.capture());
+    assertThat(recordCaptor.getValue().partition()).isEqualTo(PARTITION);
+  }
+
+  @Test
+  public void shouldPublishAsyncMessageToPartition() {
+    when(properties.isSendAsync()).thenReturn(true);
+    when(kafkaProducer.send(any(), any())).thenReturn(Futures.immediateFuture(recordMetadata));
+    connectWithPartition();
+
+    objectUnderTest.publish(topic, Optional.of(PARTITION), message);
+
+    verify(kafkaProducer).send(recordCaptor.capture(), any());
+    assertThat(recordCaptor.getValue().partition()).isEqualTo(PARTITION);
+  }
+
+  @Test
+  public void shouldFailWhenPartitionDoesNotExist() {
+    when(kafkaProducer.partitionsFor(topic)).thenReturn(List.of());
+    objectUnderTest.connect();
+
+    IllegalArgumentException thrown =
+        assertThrows(
+            IllegalArgumentException.class,
+            () -> objectUnderTest.publish(topic, Optional.of(PARTITION), message));
+
+    assertThat(thrown).hasMessageThat().isEqualTo(String.format(PARTITION_ERROR, PARTITION, topic));
+  }
+
+  @Test
+  public void shouldValidatePartitionOnlyOnce() {
+    when(kafkaProducer.send(any())).thenReturn(Futures.immediateFuture(recordMetadata));
+    connectWithPartition();
+
+    objectUnderTest.publish(topic, Optional.of(PARTITION), message);
+    objectUnderTest.publish(topic, Optional.of(PARTITION), message);
+
+    verify(kafkaProducer, times(1)).partitionsFor(topic);
   }
 
   @Test
@@ -161,5 +219,12 @@ public class KafkaSessionTest {
     when(properties.getProperty("bootstrap.servers")).thenReturn(null);
     objectUnderTest.connect();
     assertThat(objectUnderTest.isOpen()).isFalse();
+  }
+
+  private void connectWithPartition() {
+    PartitionInfo partitionInfo = mock(PartitionInfo.class);
+    when(partitionInfo.partition()).thenReturn(PARTITION);
+    when(kafkaProducer.partitionsFor(topic)).thenReturn(List.of(partitionInfo));
+    objectUnderTest.connect();
   }
 }
