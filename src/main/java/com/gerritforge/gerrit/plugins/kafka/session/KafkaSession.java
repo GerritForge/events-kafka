@@ -23,10 +23,14 @@ import com.google.inject.Provider;
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.util.Objects;
+import java.util.Optional;
+import java.util.Set;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.Future;
 import org.apache.kafka.clients.producer.Producer;
 import org.apache.kafka.clients.producer.ProducerRecord;
 import org.apache.kafka.clients.producer.RecordMetadata;
+import org.apache.kafka.common.TopicPartition;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -37,6 +41,7 @@ public final class KafkaSession {
   private final Provider<Producer<String, String>> producerProvider;
   private final KafkaEventsPublisherMetrics publisherMetrics;
   private final Log4JKafkaMessageLogger msgLog;
+  private final Set<TopicPartition> validatedPartitions = ConcurrentHashMap.newKeySet();
   private volatile Producer<String, String> producer;
 
   @Inject
@@ -116,6 +121,7 @@ public final class KafkaSession {
       producer.close();
     }
     producer = null;
+    validatedPartitions.clear();
   }
 
   public ListenableFuture<Boolean> publish(String messageBody) {
@@ -123,17 +129,39 @@ public final class KafkaSession {
   }
 
   public ListenableFuture<Boolean> publish(String topic, String messageBody) {
-    if (properties.isSendAsync()) {
-      return publishAsync(topic, messageBody);
-    }
-    return publishSync(topic, messageBody);
+    return publish(topic, Optional.empty(), messageBody);
   }
 
-  private ListenableFuture<Boolean> publishSync(String topic, String messageBody) {
+  public ListenableFuture<Boolean> publish(
+      String topic, Optional<Integer> partition, String messageBody) {
+    partition.ifPresent(partitionNumber -> validatePartition(topic, partitionNumber));
+    if (properties.isSendAsync()) {
+      return publishAsync(topic, partition, messageBody);
+    }
+    return publishSync(topic, partition, messageBody);
+  }
+
+  private void validatePartition(String topic, int partition) {
+    TopicPartition topicPartition = new TopicPartition(topic, partition);
+    if (validatedPartitions.contains(topicPartition)) {
+      return;
+    }
+    if (producer.partitionsFor(topic).stream()
+        .noneMatch(partitionInfo -> partitionInfo.partition() == partition)) {
+      throw new IllegalArgumentException(
+          String.format("Kafka partition %d does not exist for topic %s", partition, topic));
+    }
+    validatedPartitions.add(topicPartition);
+  }
+
+  private ListenableFuture<Boolean> publishSync(
+      String topic, Optional<Integer> partition, String messageBody) {
     SettableFuture<Boolean> resultF = SettableFuture.create();
     try {
       Future<RecordMetadata> future =
-          producer.send(new ProducerRecord<>(topic, "" + System.nanoTime(), messageBody));
+          producer.send(
+              new ProducerRecord<>(
+                  topic, partition.orElse(null), "" + System.nanoTime(), messageBody));
       RecordMetadata metadata = future.get();
       LOGGER.debug("The offset of the record we just sent is: {}", metadata.offset());
       publisherMetrics.incrementBrokerPublishedMessage();
@@ -147,11 +175,13 @@ public final class KafkaSession {
     }
   }
 
-  private ListenableFuture<Boolean> publishAsync(String topic, String messageBody) {
+  private ListenableFuture<Boolean> publishAsync(
+      String topic, Optional<Integer> partition, String messageBody) {
     try {
       Future<RecordMetadata> future =
           producer.send(
-              new ProducerRecord<>(topic, Long.toString(System.nanoTime()), messageBody),
+              new ProducerRecord<>(
+                  topic, partition.orElse(null), Long.toString(System.nanoTime()), messageBody),
               (metadata, e) -> {
                 if (metadata != null && e == null) {
                   LOGGER.debug("The offset of the record we just sent is: {}", metadata.offset());
