@@ -22,6 +22,30 @@
       },
       "revId": "be5ac56f78d045707b461e068ea166861d5996b6",
       "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "edf7a649_41118cff",
+        "filename": "src/main/java/com/gerritforge/gerrit/plugins/kafka/api/KafkaBrokerApi.java",
+        "patchSetId": 3
+      },
+      "lineNbr": 178,
+      "author": {
+        "id": 1015244
+      },
+      "writtenOn": "2026-06-15T17:11:20Z",
+      "side": 1,
+      "message": "Fixed in the follow up change",
+      "parentUuid": "cab5c78a_5d6adde1",
+      "range": {
+        "startLine": 178,
+        "startChar": 76,
+        "endLine": 178,
+        "endChar": 87
+      },
+      "revId": "be5ac56f78d045707b461e068ea166861d5996b6",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735"
     }
   ]
 }
