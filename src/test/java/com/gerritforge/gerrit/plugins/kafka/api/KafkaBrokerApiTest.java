@@ -17,8 +17,10 @@ import static com.google.common.truth.Truth.assertThat;
 import static org.junit.Assert.assertThrows;
 import static org.junit.Assume.assumeTrue;
 import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.when;
 
 import com.gerritforge.gerrit.eventbroker.AckAwareConsumer;
+import com.gerritforge.gerrit.eventbroker.EventsBrokerConfiguration;
 import com.gerritforge.gerrit.eventbroker.MessageAcknowledgement;
 import com.gerritforge.gerrit.plugins.kafka.KafkaContainerProvider;
 import com.gerritforge.gerrit.plugins.kafka.KafkaRestContainer;
@@ -52,8 +54,12 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
+import org.apache.kafka.clients.admin.Admin;
+import org.apache.kafka.clients.admin.NewTopic;
+import org.apache.kafka.clients.producer.KafkaProducer;
 import org.apache.kafka.clients.producer.Producer;
 import org.apache.kafka.clients.producer.ProducerConfig;
+import org.apache.kafka.clients.producer.ProducerRecord;
 import org.junit.After;
 import org.junit.AfterClass;
 import org.junit.Before;
@@ -87,6 +93,10 @@ public class KafkaBrokerApiTest {
   private static final TimeUnit TEST_TIMEOUT_UNIT = TimeUnit.SECONDS;
   private static final int TEST_TIMEOUT = 30;
   private static final int TEST_WAIT_FOR_MORE_MESSAGES_TIMEOUT = 5;
+  private static final int ONE_MESSAGE_EXPECTED = 1;
+  private static final String PARTITION_PROJECT_0 = "project-0";
+  private static final String PARTITION_PROJECT_1 = "project-1";
+  private static final String GROUP_ID = "group_id";
 
   private Injector injector;
   private KafkaSession session;
@@ -133,6 +143,7 @@ public class KafkaBrokerApiTest {
           .toInstance(mock(OneOffRequestContext.class, Answers.RETURNS_DEEP_STUBS));
 
       bind(KafkaProperties.class).toInstance(kafkaProperties);
+      bind(EventsBrokerConfiguration.class).toInstance(mock(EventsBrokerConfiguration.class));
       bind(Log4JKafkaMessageLogger.class)
           .toInstance(mock(Log4JKafkaMessageLogger.class, Answers.RETURNS_DEEP_STUBS));
       bind(KafkaSession.class).in(Scopes.SINGLETON);
@@ -403,6 +414,100 @@ public class KafkaBrokerApiTest {
   }
 
   @Test
+  public void shouldConsumeOnlyFromRequestedPartition() throws Exception {
+    assumeTrue(clientType == ClientType.NATIVE);
+    int numberOfPartition = 2;
+    KafkaBrokerApi kafkaBrokerApi = connectBroker();
+    String testTopic = createTopicWithPartitions(numberOfPartition);
+    configurePartitions(testTopic, PARTITION_PROJECT_0, PARTITION_PROJECT_1);
+    ProjectCreatedEvent partition0Event = projectCreatedEvent(PARTITION_PROJECT_0);
+    ProjectCreatedEvent partition1Event = projectCreatedEvent(PARTITION_PROJECT_1);
+
+    TestConsumer testConsumer = new TestConsumer(ONE_MESSAGE_EXPECTED);
+    kafkaBrokerApi.receiveAsyncWithPartition(
+        testTopic, PARTITION_PROJECT_1, GROUP_ID, testConsumer);
+    sendToPartition(testTopic, 0, partition0Event);
+    sendToPartition(testTopic, 1, partition1Event);
+
+    assertThat(testConsumer.await()).isTrue();
+    assertThat(testConsumer.messages).hasSize(ONE_MESSAGE_EXPECTED);
+    assertThat(gson.toJson(testConsumer.messages.getFirst()))
+        .isEqualTo(gson.toJson(partition1Event));
+
+    assertNoMoreExpectedMessages(testConsumer);
+  }
+
+  @Test
+  public void shouldFailWhenRequestedPartitionIsNotConfigured() {
+    assumeTrue(clientType == ClientType.NATIVE);
+    KafkaBrokerApi kafkaBrokerApi = connectBroker();
+    String testTopic = testTopic();
+    configurePartitions(testTopic, PARTITION_PROJECT_0);
+
+    IllegalArgumentException thrown =
+        assertThrows(
+            IllegalArgumentException.class,
+            () ->
+                kafkaBrokerApi.receiveAsyncWithPartition(
+                    testTopic,
+                    PARTITION_PROJECT_1,
+                    GROUP_ID,
+                    new TestConsumer(ONE_MESSAGE_EXPECTED)));
+
+    assertThat(thrown)
+        .hasMessageThat()
+        .isEqualTo(
+            String.format(
+                "Logical partition value %s is not configured for topic %s",
+                PARTITION_PROJECT_1, testTopic));
+  }
+
+  @Test
+  public void shouldFailWhenRequestedKafkaPartitionDoesNotExist() throws Exception {
+    assumeTrue(clientType == ClientType.NATIVE);
+    KafkaBrokerApi kafkaBrokerApi = connectBroker();
+    String testTopic = createTopicWithPartitions(1);
+    configurePartitions(testTopic, PARTITION_PROJECT_0, PARTITION_PROJECT_1);
+
+    IllegalArgumentException thrown =
+        assertThrows(
+            IllegalArgumentException.class,
+            () ->
+                kafkaBrokerApi.receiveAsyncWithPartition(
+                    testTopic,
+                    PARTITION_PROJECT_1,
+                    GROUP_ID,
+                    new TestConsumer(ONE_MESSAGE_EXPECTED)));
+
+    assertThat(thrown)
+        .hasMessageThat()
+        .isEqualTo(String.format("Kafka partition 1 does not exist for topic %s", testTopic));
+    assertThat(kafkaBrokerApi.topicSubscribersWithGroupId()).isEmpty();
+  }
+
+  @Test
+  public void shouldFailWhenRestSubscriberIsCreatedForPartition() {
+    assumeTrue(clientType == ClientType.REST);
+    KafkaBrokerApi kafkaBrokerApi = connectBroker();
+    String testTopic = testTopic();
+
+    configurePartitions(testTopic, PARTITION_PROJECT_0);
+    IllegalArgumentException thrown =
+        assertThrows(
+            IllegalArgumentException.class,
+            () ->
+                kafkaBrokerApi.receiveAsyncWithPartition(
+                    testTopic,
+                    PARTITION_PROJECT_0,
+                    GROUP_ID,
+                    new TestConsumer(ONE_MESSAGE_EXPECTED)));
+
+    assertThat(thrown)
+        .hasMessageThat()
+        .contains("Partition-aware subscriptions are not supported with clientType=REST");
+  }
+
+  @Test
   public void shouldRegisterConsumerWithoutExternalGroupId() {
     connectToKafka(
         new KafkaProperties(
@@ -505,6 +610,43 @@ public class KafkaBrokerApiTest {
 
   protected String getKafkaRestApiUriString() {
     return null;
+  }
+
+  private KafkaBrokerApi connectBroker() {
+    connectToKafka(
+        new KafkaProperties(
+            /*sendAsync*/ true,
+            clientType,
+            getKafkaRestApiUriString(),
+            restApiUsername,
+            restApiPassword));
+    return injector.getInstance(KafkaBrokerApi.class);
+  }
+
+  private void configurePartitions(String topic, String... partitions) {
+    EventsBrokerConfiguration configuration = injector.getInstance(EventsBrokerConfiguration.class);
+    when(configuration.getPartitionsForTopic(topic)).thenReturn(List.of(partitions));
+  }
+
+  private String createTopicWithPartitions(int partitions) throws Exception {
+    String topic = testTopic();
+    try (Admin admin = Admin.create(injector.getInstance(KafkaProperties.class))) {
+      admin.createTopics(List.of(new NewTopic(topic, partitions, (short) 1))).all().get();
+    }
+    return topic;
+  }
+
+  private ProjectCreatedEvent projectCreatedEvent(String projectName) {
+    ProjectCreatedEvent event = new ProjectCreatedEvent();
+    event.projectName = projectName;
+    return event;
+  }
+
+  private void sendToPartition(String topic, int partition, Event event) throws Exception {
+    try (Producer<String, String> producer =
+        new KafkaProducer<>(injector.getInstance(KafkaProperties.class))) {
+      producer.send(new ProducerRecord<>(topic, partition, null, gson.toJson(event))).get();
+    }
   }
 
   private void assertNoMoreExpectedMessages(TestConsumer testConsumer) {

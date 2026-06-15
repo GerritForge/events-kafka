@@ -13,6 +13,7 @@ package com.gerritforge.gerrit.plugins.kafka.api;
 
 import com.gerritforge.gerrit.eventbroker.AckAwareConsumer;
 import com.gerritforge.gerrit.eventbroker.BrokerApi;
+import com.gerritforge.gerrit.eventbroker.EventsBrokerConfiguration;
 import com.gerritforge.gerrit.eventbroker.TopicSubscriber;
 import com.gerritforge.gerrit.eventbroker.TopicSubscriberWithGroupId;
 import com.gerritforge.gerrit.plugins.kafka.config.KafkaSubscriberProperties;
@@ -33,6 +34,7 @@ public class KafkaBrokerApi implements BrokerApi {
 
   private final KafkaPublisher publisher;
   private final KafkaEventSubscriber.Factory kafkaEventSubscriberFactory;
+  private final EventsBrokerConfiguration eventsBrokerConfiguration;
   private final boolean autoAck;
   private List<KafkaEventSubscriber> subscribers;
 
@@ -40,9 +42,11 @@ public class KafkaBrokerApi implements BrokerApi {
   public KafkaBrokerApi(
       KafkaPublisher publisher,
       KafkaEventSubscriber.Factory kafkaEventSubscriberFactory,
-      KafkaSubscriberProperties subscriberProperties) {
+      KafkaSubscriberProperties subscriberProperties,
+      EventsBrokerConfiguration eventsBrokerConfiguration) {
     this.publisher = publisher;
     this.kafkaEventSubscriberFactory = kafkaEventSubscriberFactory;
+    this.eventsBrokerConfiguration = eventsBrokerConfiguration;
     this.autoAck = subscriberProperties.isAutoCommitEnabled();
     subscribers = Collections.synchronizedList(new ArrayList<>());
   }
@@ -60,6 +64,18 @@ public class KafkaBrokerApi implements BrokerApi {
   @Override
   public void receiveAsync(String topic, String groupId, AckAwareConsumer<Event> eventConsumer) {
     receiveAsync(topic, eventConsumer, Optional.ofNullable(groupId));
+  }
+
+  @Override
+  public void receiveAsyncWithPartition(
+      String topic, String partition, String groupId, AckAwareConsumer<Event> consumer) {
+    KafkaEventSubscriber subscriber =
+        kafkaEventSubscriberFactory.create(
+            Optional.of(groupId), Optional.of(resolvePartition(topic, partition)));
+    subscriber.subscribe(topic, consumer);
+    synchronized (subscribers) {
+      subscribers.add(subscriber);
+    }
   }
 
   @Override
@@ -114,9 +130,21 @@ public class KafkaBrokerApi implements BrokerApi {
     return autoAck;
   }
 
+  private int resolvePartition(String topic, String logicPartition) {
+    List<String> partitions = eventsBrokerConfiguration.getPartitionsForTopic(topic);
+    int partition = partitions.indexOf(logicPartition);
+    if (partition < 0) {
+      throw new IllegalArgumentException(
+          String.format(
+              "Logical partition value %s is not configured for topic %s", logicPartition, topic));
+    }
+    return partition;
+  }
+
   private void receiveAsync(
       String topic, AckAwareConsumer<Event> eventConsumer, Optional<String> externalGroupId) {
-    KafkaEventSubscriber subscriber = kafkaEventSubscriberFactory.create(externalGroupId);
+    KafkaEventSubscriber subscriber =
+        kafkaEventSubscriberFactory.create(externalGroupId, Optional.empty());
     synchronized (subscribers) {
       subscribers.add(subscriber);
     }

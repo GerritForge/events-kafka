@@ -13,13 +13,16 @@ package com.gerritforge.gerrit.plugins.kafka.subscribe;
 
 import com.gerritforge.gerrit.eventbroker.AckAwareConsumer;
 import com.google.gerrit.server.events.Event;
+import com.google.inject.assistedinject.Assisted;
 import java.util.Optional;
 
 /** Generic interface to a Kafka topic subscriber. */
 public interface KafkaEventSubscriber {
 
   public interface Factory {
-    KafkaEventSubscriber create(Optional<String> externalGroupId);
+    KafkaEventSubscriber create(
+        @Assisted("externalGroupId") Optional<String> externalGroupId,
+        @Assisted("partition") Optional<Integer> partition);
   }
 
   /**
