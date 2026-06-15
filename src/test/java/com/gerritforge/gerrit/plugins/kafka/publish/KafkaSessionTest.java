@@ -23,8 +23,10 @@ import com.gerritforge.gerrit.plugins.kafka.session.KafkaProducerProvider;
 import com.gerritforge.gerrit.plugins.kafka.session.KafkaSession;
 import com.gerritforge.gerrit.plugins.kafka.session.Log4JKafkaMessageLogger;
 import com.google.common.util.concurrent.Futures;
+import java.util.Optional;
 import org.apache.kafka.clients.producer.Callback;
 import org.apache.kafka.clients.producer.Producer;
+import org.apache.kafka.clients.producer.ProducerRecord;
 import org.apache.kafka.clients.producer.RecordMetadata;
 import org.apache.kafka.common.TopicPartition;
 import org.junit.Before;
@@ -45,6 +47,7 @@ public class KafkaSessionTest {
 
   @Mock Log4JKafkaMessageLogger msgLog;
   @Captor ArgumentCaptor<Callback> callbackCaptor;
+  @Captor ArgumentCaptor<ProducerRecord<String, String>> recordCaptor;
 
   RecordMetadata recordMetadata;
   String message = "sample_message";
@@ -78,6 +81,18 @@ public class KafkaSessionTest {
     objectUnderTest.connect();
     objectUnderTest.publish(message);
     verify(msgLog).log(topic, message);
+  }
+
+  @Test
+  public void shouldPublishSyncMessageToPartition() {
+    when(properties.isSendAsync()).thenReturn(false);
+    when(kafkaProducer.send(any())).thenReturn(Futures.immediateFuture(recordMetadata));
+
+    objectUnderTest.connect();
+    objectUnderTest.publish(topic, Optional.of(1), message);
+
+    verify(kafkaProducer).send(recordCaptor.capture());
+    assertThat(recordCaptor.getValue().partition()).isEqualTo(1);
   }
 
   @Test
