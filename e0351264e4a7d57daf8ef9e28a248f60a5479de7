@@ -1,0 +1,136 @@
+{
+  "comments": [
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "f628303d_49a4234b",
+        "filename": "src/main/java/com/gerritforge/gerrit/plugins/kafka/api/KafkaBrokerApi.java",
+        "patchSetId": 6
+      },
+      "lineNbr": 133,
+      "author": {
+        "id": 1012541
+      },
+      "writtenOn": "2026-06-18T09:51:52Z",
+      "side": 1,
+      "message": "What about `logicalPartition` ?",
+      "range": {
+        "startLine": 133,
+        "startChar": 52,
+        "endLine": 133,
+        "endChar": 66
+      },
+      "revId": "e0351264e4a7d57daf8ef9e28a248f60a5479de7",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "29eb850c_ce2a67d8",
+        "filename": "src/main/java/com/gerritforge/gerrit/plugins/kafka/subscribe/KafkaEventNativeSubscriber.java",
+        "patchSetId": 6
+      },
+      "lineNbr": 97,
+      "author": {
+        "id": 1012541
+      },
+      "writtenOn": "2026-06-18T09:51:52Z",
+      "side": 1,
+      "message": "nit: remove parentheses here and add them in the map at line 98, so if you don\u0027t have partition you avoid having string like: \"alias [index][]\"",
+      "range": {
+        "startLine": 97,
+        "startChar": 55,
+        "endLine": 97,
+        "endChar": 59
+      },
+      "revId": "e0351264e4a7d57daf8ef9e28a248f60a5479de7",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "a8b2c0b5_dcc3aaf2",
+        "filename": "src/main/java/com/gerritforge/gerrit/plugins/kafka/subscribe/KafkaEventNativeSubscriber.java",
+        "patchSetId": 6
+      },
+      "lineNbr": 107,
+      "author": {
+        "id": 1012541
+      },
+      "writtenOn": "2026-06-18T09:51:52Z",
+      "side": 1,
+      "message": "This case is not covered in the test cases. Worth adding it.",
+      "revId": "e0351264e4a7d57daf8ef9e28a248f60a5479de7",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "102e2f30_96b06d94",
+        "filename": "src/main/java/com/gerritforge/gerrit/plugins/kafka/subscribe/KafkaEventNativeSubscriber.java",
+        "patchSetId": 6
+      },
+      "lineNbr": 107,
+      "author": {
+        "id": 1012541
+      },
+      "writtenOn": "2026-06-18T09:51:52Z",
+      "side": 1,
+      "message": "Before registering any partition, should we check the number of partitions configured actually matches the one present in the topic?\n\nWe could use the consumer `partitionsFor` [1] method.\n\n[1]: https://kafka.apache.org/25/javadoc/org/apache/kafka/clients/consumer/KafkaConsumer.html#partitionsFor-java.lang.String-",
+      "range": {
+        "startLine": 107,
+        "startChar": 10,
+        "endLine": 107,
+        "endChar": 30
+      },
+      "revId": "e0351264e4a7d57daf8ef9e28a248f60a5479de7",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "00896b7f_34d47f43",
+        "filename": "src/test/java/com/gerritforge/gerrit/plugins/kafka/api/KafkaBrokerApiTest.java",
+        "patchSetId": 6
+      },
+      "lineNbr": 418,
+      "author": {
+        "id": 1012541
+      },
+      "writtenOn": "2026-06-18T09:51:52Z",
+      "side": 1,
+      "message": "Can we use a variable? Like `messageExpected` and reuse it in the assertions?",
+      "range": {
+        "startLine": 418,
+        "startChar": 49,
+        "endLine": 418,
+        "endChar": 50
+      },
+      "revId": "e0351264e4a7d57daf8ef9e28a248f60a5479de7",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "86a443ac_777b5d98",
+        "filename": "src/test/java/com/gerritforge/gerrit/plugins/kafka/api/KafkaBrokerApiTest.java",
+        "patchSetId": 6
+      },
+      "lineNbr": 419,
+      "author": {
+        "id": 1012541
+      },
+      "writtenOn": "2026-06-18T09:51:52Z",
+      "side": 1,
+      "message": "nit: factor out in variables and maybe clarify it is an `instanceId`, for example \"partition-0-instanceId\"",
+      "range": {
+        "startLine": 419,
+        "startChar": 48,
+        "endLine": 419,
+        "endChar": 61
+      },
+      "revId": "e0351264e4a7d57daf8ef9e28a248f60a5479de7",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735"
+    }
+  ]
+}
