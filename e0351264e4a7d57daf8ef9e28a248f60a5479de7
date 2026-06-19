@@ -24,6 +24,30 @@
       "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735"
     },
     {
+      "unresolved": false,
+      "key": {
+        "uuid": "599feaee_5bde4794",
+        "filename": "src/main/java/com/gerritforge/gerrit/plugins/kafka/api/KafkaBrokerApi.java",
+        "patchSetId": 6
+      },
+      "lineNbr": 133,
+      "author": {
+        "id": 1015244
+      },
+      "writtenOn": "2026-06-19T10:06:11Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "f628303d_49a4234b",
+      "range": {
+        "startLine": 133,
+        "startChar": 52,
+        "endLine": 133,
+        "endChar": 66
+      },
+      "revId": "e0351264e4a7d57daf8ef9e28a248f60a5479de7",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735"
+    },
+    {
       "unresolved": true,
       "key": {
         "uuid": "29eb850c_ce2a67d8",
@@ -37,6 +61,30 @@
       "writtenOn": "2026-06-18T09:51:52Z",
       "side": 1,
       "message": "nit: remove parentheses here and add them in the map at line 98, so if you don\u0027t have partition you avoid having string like: \"alias [index][]\"",
+      "range": {
+        "startLine": 97,
+        "startChar": 55,
+        "endLine": 97,
+        "endChar": 59
+      },
+      "revId": "e0351264e4a7d57daf8ef9e28a248f60a5479de7",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "78f0f87f_f2d42417",
+        "filename": "src/main/java/com/gerritforge/gerrit/plugins/kafka/subscribe/KafkaEventNativeSubscriber.java",
+        "patchSetId": 6
+      },
+      "lineNbr": 97,
+      "author": {
+        "id": 1015244
+      },
+      "writtenOn": "2026-06-19T10:06:11Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "29eb850c_ce2a67d8",
       "range": {
         "startLine": 97,
         "startChar": 55,
@@ -87,6 +135,48 @@
       "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735"
     },
     {
+      "unresolved": false,
+      "key": {
+        "uuid": "ca33b410_73381d70",
+        "filename": "src/main/java/com/gerritforge/gerrit/plugins/kafka/subscribe/KafkaEventNativeSubscriber.java",
+        "patchSetId": 6
+      },
+      "lineNbr": 107,
+      "author": {
+        "id": 1015244
+      },
+      "writtenOn": "2026-06-19T10:06:11Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "a8b2c0b5_dcc3aaf2",
+      "revId": "e0351264e4a7d57daf8ef9e28a248f60a5479de7",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "b1f1b802_31b523df",
+        "filename": "src/main/java/com/gerritforge/gerrit/plugins/kafka/subscribe/KafkaEventNativeSubscriber.java",
+        "patchSetId": 6
+      },
+      "lineNbr": 107,
+      "author": {
+        "id": 1015244
+      },
+      "writtenOn": "2026-06-19T10:06:11Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "102e2f30_96b06d94",
+      "range": {
+        "startLine": 107,
+        "startChar": 10,
+        "endLine": 107,
+        "endChar": 30
+      },
+      "revId": "e0351264e4a7d57daf8ef9e28a248f60a5479de7",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735"
+    },
+    {
       "unresolved": true,
       "key": {
         "uuid": "00896b7f_34d47f43",
@@ -110,6 +200,30 @@
       "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735"
     },
     {
+      "unresolved": false,
+      "key": {
+        "uuid": "d039c6e5_0d3b53d7",
+        "filename": "src/test/java/com/gerritforge/gerrit/plugins/kafka/api/KafkaBrokerApiTest.java",
+        "patchSetId": 6
+      },
+      "lineNbr": 418,
+      "author": {
+        "id": 1015244
+      },
+      "writtenOn": "2026-06-19T10:06:11Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "00896b7f_34d47f43",
+      "range": {
+        "startLine": 418,
+        "startChar": 49,
+        "endLine": 418,
+        "endChar": 50
+      },
+      "revId": "e0351264e4a7d57daf8ef9e28a248f60a5479de7",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735"
+    },
+    {
       "unresolved": true,
       "key": {
         "uuid": "86a443ac_777b5d98",
@@ -123,6 +237,30 @@
       "writtenOn": "2026-06-18T09:51:52Z",
       "side": 1,
       "message": "nit: factor out in variables and maybe clarify it is an `instanceId`, for example \"partition-0-instanceId\"",
+      "range": {
+        "startLine": 419,
+        "startChar": 48,
+        "endLine": 419,
+        "endChar": 61
+      },
+      "revId": "e0351264e4a7d57daf8ef9e28a248f60a5479de7",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "dcd2abd3_78700741",
+        "filename": "src/test/java/com/gerritforge/gerrit/plugins/kafka/api/KafkaBrokerApiTest.java",
+        "patchSetId": 6
+      },
+      "lineNbr": 419,
+      "author": {
+        "id": 1015244
+      },
+      "writtenOn": "2026-06-19T10:06:11Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "86a443ac_777b5d98",
       "range": {
         "startLine": 419,
         "startChar": 48,
