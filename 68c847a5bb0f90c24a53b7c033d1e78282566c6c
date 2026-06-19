@@ -1,0 +1,50 @@
+{
+  "comments": [
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "79b8b6e8_4bd7cffe",
+        "filename": "src/main/java/com/gerritforge/gerrit/plugins/kafka/api/KafkaBrokerApi.java",
+        "patchSetId": 7
+      },
+      "lineNbr": 78,
+      "author": {
+        "id": 1012541
+      },
+      "writtenOn": "2026-06-19T13:26:35Z",
+      "side": 1,
+      "message": "I think this is the correct way of doing it, but I wanted to double check. I noticed the behaviour of `receiveAsyncWithPartition` is different from `receiveAsync`, since, in the latter, we first add the `subscriber` and then `subscribe` it. \n\nIf `subscribe` is not successful we would have a \"broken\" subscriber in the pool.\n\nDo you agree?",
+      "range": {
+        "startLine": 75,
+        "startChar": 0,
+        "endLine": 78,
+        "endChar": 5
+      },
+      "revId": "68c847a5bb0f90c24a53b7c033d1e78282566c6c",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "7cbf59f5_62a95d0b",
+        "filename": "src/main/java/com/gerritforge/gerrit/plugins/kafka/subscribe/KafkaEventNativeSubscriber.java",
+        "patchSetId": 7
+      },
+      "lineNbr": 122,
+      "author": {
+        "id": 1012541
+      },
+      "writtenOn": "2026-06-19T13:26:35Z",
+      "side": 1,
+      "message": "This might throw, which I think is fine right?",
+      "range": {
+        "startLine": 122,
+        "startChar": 17,
+        "endLine": 122,
+        "endChar": 30
+      },
+      "revId": "68c847a5bb0f90c24a53b7c033d1e78282566c6c",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735"
+    }
+  ]
+}
