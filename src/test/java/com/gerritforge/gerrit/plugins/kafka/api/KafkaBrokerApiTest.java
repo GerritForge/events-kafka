@@ -552,6 +552,20 @@ public class KafkaBrokerApiTest {
   }
 
   @Test
+  public void shouldNotRegisterSubscriberWhenSubscriptionFails() {
+    assumeTrue(clientType == ClientType.NATIVE);
+    KafkaBrokerApi kafkaBrokerApi = connectBroker();
+    TestConsumer consumer = new TestConsumer(ONE_MESSAGE_EXPECTED);
+    String invalidTopicName = "";
+
+    assertThrows(
+        IllegalArgumentException.class,
+        () -> kafkaBrokerApi.receiveAsync(invalidTopicName, consumer));
+
+    assertThat(kafkaBrokerApi.topicSubscribers()).isEmpty();
+  }
+
+  @Test
   public void shouldRegisterConsumerWithExternalGroupId() {
     connectToKafka(
         new KafkaProperties(
