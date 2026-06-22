@@ -48,6 +48,30 @@
       "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735"
     },
     {
+      "unresolved": false,
+      "key": {
+        "uuid": "c97c6483_752392bb",
+        "filename": "src/main/java/com/gerritforge/gerrit/plugins/kafka/publish/KafkaPublisher.java",
+        "patchSetId": 4
+      },
+      "lineNbr": 86,
+      "author": {
+        "id": 1015244
+      },
+      "writtenOn": "2026-06-22T16:30:58Z",
+      "side": 1,
+      "message": "Discussed f2f: any primitive can be retrieved as string and thus this is OK.",
+      "parentUuid": "0e0fd144_43fd5916",
+      "range": {
+        "startLine": 86,
+        "startChar": 27,
+        "endLine": 86,
+        "endChar": 42
+      },
+      "revId": "80a0146a9f1f14884b4fef9e9c45f48dcff78a65",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735"
+    },
+    {
       "unresolved": true,
       "key": {
         "uuid": "420d8bcb_3a1b919d",
