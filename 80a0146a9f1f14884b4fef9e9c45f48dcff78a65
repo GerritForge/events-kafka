@@ -26,6 +26,30 @@
     {
       "unresolved": true,
       "key": {
+        "uuid": "0e0fd144_43fd5916",
+        "filename": "src/main/java/com/gerritforge/gerrit/plugins/kafka/publish/KafkaPublisher.java",
+        "patchSetId": 4
+      },
+      "lineNbr": 86,
+      "author": {
+        "id": 1015244
+      },
+      "writtenOn": "2026-06-22T16:00:15Z",
+      "side": 1,
+      "message": "`isString` is not a valid `JsonElement` API.\ndid you mean something else?",
+      "parentUuid": "0a49ad93_17b33df2",
+      "range": {
+        "startLine": 86,
+        "startChar": 27,
+        "endLine": 86,
+        "endChar": 42
+      },
+      "revId": "80a0146a9f1f14884b4fef9e9c45f48dcff78a65",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735"
+    },
+    {
+      "unresolved": true,
+      "key": {
         "uuid": "420d8bcb_3a1b919d",
         "filename": "src/main/java/com/gerritforge/gerrit/plugins/kafka/publish/KafkaPublisher.java",
         "patchSetId": 4
@@ -37,6 +61,30 @@
       "writtenOn": "2026-06-19T13:56:23Z",
       "side": 1,
       "message": "Similarly to the consumer, if the config contains X partition values but the Kafka topic has only X-1 partitions, the producer will attempt to send to a non-existing partition.",
+      "range": {
+        "startLine": 87,
+        "startChar": 26,
+        "endLine": 87,
+        "endChar": 45
+      },
+      "revId": "80a0146a9f1f14884b4fef9e9c45f48dcff78a65",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "7b290ea4_69c33d08",
+        "filename": "src/main/java/com/gerritforge/gerrit/plugins/kafka/publish/KafkaPublisher.java",
+        "patchSetId": 4
+      },
+      "lineNbr": 87,
+      "author": {
+        "id": 1015244
+      },
+      "writtenOn": "2026-06-22T16:00:15Z",
+      "side": 1,
+      "message": "Good catch, I am now validating the resolved partition in a similar way to what we do when trying to consume from it.\n\nAttempt to publish to a non-existing partition, would have failed anyway, but this catches the error earlier on and provides a clear error message.",
+      "parentUuid": "420d8bcb_3a1b919d",
       "range": {
         "startLine": 87,
         "startChar": 26,
@@ -70,6 +118,30 @@
       "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735"
     },
     {
+      "unresolved": false,
+      "key": {
+        "uuid": "e94d1dd1_da019625",
+        "filename": "src/main/java/com/gerritforge/gerrit/plugins/kafka/publish/KafkaPublisher.java",
+        "patchSetId": 4
+      },
+      "lineNbr": 96,
+      "author": {
+        "id": 1015244
+      },
+      "writtenOn": "2026-06-22T16:00:15Z",
+      "side": 1,
+      "message": "Done and covered by testcases",
+      "parentUuid": "234ef094_0d5abde4",
+      "range": {
+        "startLine": 96,
+        "startChar": 23,
+        "endLine": 96,
+        "endChar": 64
+      },
+      "revId": "80a0146a9f1f14884b4fef9e9c45f48dcff78a65",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735"
+    },
+    {
       "unresolved": true,
       "key": {
         "uuid": "e1789b85_7d38644e",
@@ -87,6 +159,24 @@
       "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735"
     },
     {
+      "unresolved": false,
+      "key": {
+        "uuid": "66ff7d3a_b6725f01",
+        "filename": "src/test/java/com/gerritforge/gerrit/plugins/kafka/api/KafkaBrokerApiTest.java",
+        "patchSetId": 4
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1015244
+      },
+      "writtenOn": "2026-06-22T16:00:15Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "e1789b85_7d38644e",
+      "revId": "80a0146a9f1f14884b4fef9e9c45f48dcff78a65",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735"
+    },
+    {
       "unresolved": true,
       "key": {
         "uuid": "1bc3ff09_b758e43e",
@@ -100,6 +190,30 @@
       "writtenOn": "2026-06-19T13:56:23Z",
       "side": 1,
       "message": "Why not a test for the async publishing as well?",
+      "range": {
+        "startLine": 87,
+        "startChar": 14,
+        "endLine": 87,
+        "endChar": 49
+      },
+      "revId": "80a0146a9f1f14884b4fef9e9c45f48dcff78a65",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "6b9c1d82_a4ead4a3",
+        "filename": "src/test/java/com/gerritforge/gerrit/plugins/kafka/publish/KafkaSessionTest.java",
+        "patchSetId": 4
+      },
+      "lineNbr": 87,
+      "author": {
+        "id": 1015244
+      },
+      "writtenOn": "2026-06-22T16:00:15Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "1bc3ff09_b758e43e",
       "range": {
         "startLine": 87,
         "startChar": 14,
