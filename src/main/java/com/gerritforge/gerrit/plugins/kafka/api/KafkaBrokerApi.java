@@ -145,9 +145,9 @@ public class KafkaBrokerApi implements BrokerApi {
       String topic, AckAwareConsumer<Event> eventConsumer, Optional<String> externalGroupId) {
     KafkaEventSubscriber subscriber =
         kafkaEventSubscriberFactory.create(externalGroupId, Optional.empty());
+    subscriber.subscribe(topic, eventConsumer);
     synchronized (subscribers) {
       subscribers.add(subscriber);
     }
-    subscriber.subscribe(topic, eventConsumer);
   }
 }
