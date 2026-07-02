@@ -1,1 +1,1 @@
-pluginPipeline(extraModules: ['events-broker'])
+pluginPipeline(extraModules: ['events-broker'], extraGhRepos: ['gerrit-bsl-license'])
