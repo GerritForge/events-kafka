@@ -13,6 +13,7 @@ gerrit_plugin(
         "Gerrit-PluginName: events-kafka",
         "Gerrit-InitStep: com.gerritforge.gerrit.plugins.kafka.InitConfig",
         "Gerrit-Module: com.gerritforge.gerrit.plugins.kafka.Module",
+        "Gerrit-HttpModule: com.gerritforge.gerrit.plugins.bsl.HttpModule",
         "Implementation-Title: Gerrit Apache Kafka plugin",
         "Implementation-URL: https://github.com/gerritforge/events-kafka",
     ],
@@ -20,6 +21,7 @@ gerrit_plugin(
     deps = [
         ":events-broker-neverlink",
         "//lib/httpcomponents:httpclient",
+        "//plugins/gerrit-bsl-license",
         "@httpasyncclient//jar",
         "@httpcore-nio//jar",
         "@kafka-client//jar",
@@ -47,14 +49,14 @@ java_library(
     visibility = ["//visibility:public"],
     exports = PLUGIN_DEPS + PLUGIN_TEST_DEPS + [
         ":events-kafka__plugin",
-        "@testcontainers-kafka//jar",
-        "@jackson-annotations//jar",
-        "@testcontainers//jar",
         "@docker-java-api//jar",
         "@docker-java-transport//jar",
         "@duct-tape//jar",
-        "@visible-assertions//jar",
+        "@jackson-annotations//jar",
         "@jna//jar",
+        "@testcontainers-kafka//jar",
+        "@testcontainers//jar",
+        "@visible-assertions//jar",
     ],
 )
 
