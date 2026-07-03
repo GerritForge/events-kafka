@@ -1,0 +1,21 @@
+{
+  "comments": [
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "1ee63893_5eb36083",
+        "filename": "BUILD",
+        "patchSetId": 7
+      },
+      "lineNbr": 57,
+      "author": {
+        "id": 1000000
+      },
+      "writtenOn": "2026-07-03T23:57:51Z",
+      "side": 0,
+      "message": "Unrelated change.",
+      "revId": "96d87df92d2f732abe8e72c98a9014a2b136ce55",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735"
+    }
+  ]
+}
