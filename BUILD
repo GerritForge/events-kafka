@@ -35,6 +35,7 @@ gerrit_plugin(
         "Gerrit-PluginName: events-kafka",
         "Gerrit-InitStep: com.gerritforge.gerrit.plugins.kafka.InitConfig",
         "Gerrit-Module: com.gerritforge.gerrit.plugins.kafka.Module",
+        "Gerrit-HttpModule: com.gerritforge.gerrit.plugins.bsl.HttpModule",
         "Implementation-Title: Gerrit Apache Kafka plugin",
         "Implementation-URL: https://github.com/gerritforge/events-kafka",
     ],
