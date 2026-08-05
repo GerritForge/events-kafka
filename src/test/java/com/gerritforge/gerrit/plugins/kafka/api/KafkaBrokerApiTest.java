@@ -30,7 +30,6 @@ import com.gerritforge.gerrit.plugins.kafka.config.KafkaProperties.ClientType;
 import com.gerritforge.gerrit.plugins.kafka.config.KafkaSubscriberProperties;
 import com.gerritforge.gerrit.plugins.kafka.session.KafkaProducerProvider;
 import com.gerritforge.gerrit.plugins.kafka.session.KafkaSession;
-import com.gerritforge.gerrit.plugins.kafka.session.Log4JKafkaMessageLogger;
 import com.google.common.base.Strings;
 import com.google.gerrit.extensions.registration.DynamicMap;
 import com.google.gerrit.metrics.MetricMaker;
@@ -149,8 +148,6 @@ public class KafkaBrokerApiTest {
 
       bind(KafkaProperties.class).toInstance(kafkaProperties);
       bind(EventsBrokerConfiguration.class).toInstance(eventsBrokerConfiguration);
-      bind(Log4JKafkaMessageLogger.class)
-          .toInstance(mock(Log4JKafkaMessageLogger.class, Answers.RETURNS_DEEP_STUBS));
       bind(KafkaSession.class).in(Scopes.SINGLETON);
 
       bindKafkaClientImpl();
