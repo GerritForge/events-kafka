@@ -1,0 +1,27 @@
+{
+  "comments": [
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "f2f2e074_84719b05",
+        "filename": "/COMMIT_MSG",
+        "patchSetId": 1
+      },
+      "lineNbr": 7,
+      "author": {
+        "id": 1020677
+      },
+      "writtenOn": "2026-08-05T15:34:11Z",
+      "side": 1,
+      "message": "Is this a clean revert? Should we mention the change-id we\u0027re reverting too for ease of nivagation?",
+      "range": {
+        "startLine": 7,
+        "startChar": 0,
+        "endLine": 7,
+        "endChar": 60
+      },
+      "revId": "c434ce13fdf88c0f38ba000a82c8061da9e85e50",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735"
+    }
+  ]
+}
