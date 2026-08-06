@@ -224,12 +224,12 @@ public class KafkaEventNativeSubscriber implements KafkaEventSubscriber {
                 try (ManualRequestContext ctx = oneOffCtx.open()) {
                   Event event =
                       valueDeserializer.deserialize(consumerRecord.topic(), consumerRecord.value());
-                  ackRecords.put(event, consumerRecord);
-                  messageProcessor.accept(
-                      event,
-                      configuration.isAutoCommitEnabled()
-                          ? KafkaAutoAcknowledgement.INSTANCE
-                          : this::kafkaAck);
+                  if (configuration.isAutoCommitEnabled()) {
+                    messageProcessor.accept(event, KafkaAutoAcknowledgement.INSTANCE);
+                  } else {
+                    ackRecords.put(event, consumerRecord);
+                    messageProcessor.accept(event, this::kafkaAck);
+                  }
                 } catch (Exception e) {
                   logger.atSevere().withCause(e).log(
                       "Malformed event '%s': [Exception: %s]",
