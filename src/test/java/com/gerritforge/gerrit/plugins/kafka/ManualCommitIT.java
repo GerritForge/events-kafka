@@ -15,6 +15,7 @@ import static com.google.common.truth.Truth.assertThat;
 
 import com.gerritforge.gerrit.eventbroker.BrokerApi;
 import com.gerritforge.gerrit.eventbroker.MessageAcknowledgement;
+import com.gerritforge.gerrit.eventbroker.MessageAcknowledgementException;
 import com.gerritforge.gerrit.plugins.kafka.config.KafkaSubscriberProperties;
 import com.google.gerrit.acceptance.LightweightPluginDaemonTest;
 import com.google.gerrit.acceptance.NoHttpd;
@@ -28,6 +29,7 @@ import java.util.Properties;
 import java.util.Set;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.BiConsumer;
 import org.apache.kafka.clients.consumer.ConsumerConfig;
@@ -85,6 +87,49 @@ public class ManualCommitIT extends LightweightPluginDaemonTest {
     consumeOneMessage(event, topic, (ev, msgAck) -> msgAck.ack(ev));
 
     assertThat(getCommittedOffset(topic).offset()).isEqualTo(1L);
+  }
+
+  @Test
+  @GerritConfig(name = "plugin.events-kafka.enableAutoCommit", value = "false")
+  public void shouldRemovePreviousRecordsFromSamePartitionWhenAckIsCalled() throws Exception {
+    String topic = "manual_commit_ack_removes_previous_records_topic";
+    CountDownLatch latch = new CountDownLatch(3);
+    AtomicInteger consumedMessages = new AtomicInteger();
+    AtomicReference<Event> firstEvent = new AtomicReference<>();
+    AtomicReference<MessageAcknowledgement<Event>> firstAcknowledgement = new AtomicReference<>();
+    AtomicReference<MessageAcknowledgementException> thrown = new AtomicReference<>();
+    BrokerApi brokerApi = kafkaBrokerApi();
+
+    try {
+      brokerApi.send(topic, newProjectCreatedEvent(instanceId));
+      brokerApi.send(topic, newProjectCreatedEvent(instanceId));
+      brokerApi.send(topic, newProjectCreatedEvent(instanceId));
+      brokerApi.receiveAsync(
+          topic,
+          (ev, acknowledgement) -> {
+            int messageNumber = consumedMessages.incrementAndGet();
+            if (messageNumber == 1) {
+              firstEvent.set(ev);
+              firstAcknowledgement.set(acknowledgement);
+            }
+            if (messageNumber == 2) {
+              acknowledgement.ack(ev);
+              try {
+                firstAcknowledgement.get().ack(firstEvent.get());
+              } catch (MessageAcknowledgementException e) {
+                thrown.set(e);
+              }
+            }
+            latch.countDown();
+          });
+
+      assertThat(latch.await(WAIT_FOR_POLL_TIMEOUT.toMillis(), TimeUnit.MILLISECONDS)).isTrue();
+    } finally {
+      brokerApi.disconnect(topic, null);
+    }
+
+    assertThat(getCommittedOffset(topic).offset()).isEqualTo(2L);
+    assertThat(thrown.get()).hasMessageThat().contains("Invalid or already acked Event");
   }
 
   @Test
