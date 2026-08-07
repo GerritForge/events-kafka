@@ -50,10 +50,18 @@ public class Manager implements LifecycleListener {
     consumersWithGroupId.forEach(
         topicSubscriberWithGroupId -> {
           TopicSubscriber topicSubscriber = topicSubscriberWithGroupId.topicSubscriber();
-          brokerApi.receiveAsync(
-              topicSubscriber.topic(),
-              topicSubscriberWithGroupId.groupId(),
-              topicSubscriber.consumer());
+          if (topicSubscriberWithGroupId.partition().isPresent()) {
+            brokerApi.receiveAsyncWithPartition(
+                topicSubscriber.topic(),
+                topicSubscriberWithGroupId.partition().get(),
+                topicSubscriberWithGroupId.groupId(),
+                topicSubscriber.consumer());
+          } else {
+            brokerApi.receiveAsync(
+                topicSubscriber.topic(),
+                topicSubscriberWithGroupId.groupId(),
+                topicSubscriber.consumer());
+          }
         });
   }
 
