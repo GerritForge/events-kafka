@@ -1,0 +1,27 @@
+{
+  "comments": [
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "2b7b2096_6793eca1",
+        "filename": "src/main/java/com/gerritforge/gerrit/plugins/kafka/subscribe/KafkaEventNativeSubscriber.java",
+        "patchSetId": 4
+      },
+      "lineNbr": 199,
+      "author": {
+        "id": 1015244
+      },
+      "writtenOn": "2026-08-11T06:37:44Z",
+      "side": 1,
+      "message": "`eventsToCRs` can have records but not this event, then `get(event)` returns `null` and the next line throws an `NPE`.\n\nI think this can happen if an old ack is retried while newer events from the same partition are still pending, For example: :\n\n\nevents 1, 2, and 3 are pending.\nAcking event 2 removes events 1 and 2.\nEvent 3 is still in the map.\nIf event 1 is acked again, the map isn\u0027t empty, but `get(event1)` returns `null`, causing an `NPE`.\n\nIt would be good to add a test for that case too.",
+      "range": {
+        "startLine": 199,
+        "startChar": 0,
+        "endLine": 199,
+        "endChar": 77
+      },
+      "revId": "bdf61b414196aa519393ef22a5222063fd7806a2",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735"
+    }
+  ]
+}
