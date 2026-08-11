@@ -247,7 +247,7 @@ public class KafkaEventNativeSubscriber implements KafkaEventSubscriber {
       } catch (Exception e) {
         subscriberMetrics.incrementSubscriberFailedToPollMessages();
         logger.atSevere().withCause(e).log(
-            "Existing consumer loop of topic %s because of a non-recoverable exception", topic);
+            "Exiting consumer loop of topic %s because of a non-recoverable exception", topic);
         reconnectAfterFailure();
       } finally {
         consumer.close();
