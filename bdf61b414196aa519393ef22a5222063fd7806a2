@@ -46,6 +46,30 @@
       },
       "revId": "bdf61b414196aa519393ef22a5222063fd7806a2",
       "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "141737de_5beb73f3",
+        "filename": "src/main/java/com/gerritforge/gerrit/plugins/kafka/subscribe/KafkaEventNativeSubscriber.java",
+        "patchSetId": 4
+      },
+      "lineNbr": 199,
+      "author": {
+        "id": 1000000
+      },
+      "writtenOn": "2026-08-11T23:33:44Z",
+      "side": 1,
+      "message": "There is an NPE check on the PS5, and the new test doesn\u0027t throw any exception. Are we missing something in the test maybe?",
+      "parentUuid": "015785b2_02a83081",
+      "range": {
+        "startLine": 199,
+        "startChar": 0,
+        "endLine": 199,
+        "endChar": 77
+      },
+      "revId": "bdf61b414196aa519393ef22a5222063fd7806a2",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735"
     }
   ]
 }
