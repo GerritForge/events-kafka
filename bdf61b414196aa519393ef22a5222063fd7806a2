@@ -70,6 +70,30 @@
       },
       "revId": "bdf61b414196aa519393ef22a5222063fd7806a2",
       "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "8d357155_a26a103d",
+        "filename": "src/main/java/com/gerritforge/gerrit/plugins/kafka/subscribe/KafkaEventNativeSubscriber.java",
+        "patchSetId": 4
+      },
+      "lineNbr": 199,
+      "author": {
+        "id": 1012541
+      },
+      "writtenOn": "2026-08-12T14:53:01Z",
+      "side": 1,
+      "message": "\u003e There is an NPE check on the PS5, and the new test doesn\u0027t throw any exception. Are we missing something in the test maybe?\n\nIn PS5, I fixed the NPE that could have been triggered by the scenario highlighted by Tony, and I added a test to cover it. The new test doesn\u0027t need to throw any exception; rather, the code avoids it.",
+      "parentUuid": "141737de_5beb73f3",
+      "range": {
+        "startLine": 199,
+        "startChar": 0,
+        "endLine": 199,
+        "endChar": 77
+      },
+      "revId": "bdf61b414196aa519393ef22a5222063fd7806a2",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735"
     }
   ]
 }
