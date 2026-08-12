@@ -33,6 +33,7 @@ gerrit_plugin(
     ext_deps = EXT_DEPS,
     manifest_entries = [
         "Gerrit-PluginName: events-kafka",
+        "Gerrit-ReloadMode: restart",
         "Gerrit-InitStep: com.gerritforge.gerrit.plugins.kafka.InitConfig",
         "Gerrit-Module: com.gerritforge.gerrit.plugins.kafka.Module",
         "Gerrit-HttpModule: com.gerritforge.gerrit.plugins.bsl.HttpModule",
