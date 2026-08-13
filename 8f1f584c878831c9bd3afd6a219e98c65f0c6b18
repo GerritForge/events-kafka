@@ -26,6 +26,30 @@
     {
       "unresolved": true,
       "key": {
+        "uuid": "20cd856a_e80903dc",
+        "filename": "src/main/java/com/gerritforge/gerrit/plugins/kafka/subscribe/KafkaEventNativeSubscriber.java",
+        "patchSetId": 5
+      },
+      "lineNbr": 251,
+      "author": {
+        "id": 1012541
+      },
+      "writtenOn": "2026-08-13T13:29:22Z",
+      "side": 1,
+      "message": "Good catch!\n\nI am now using ref equality when removing the Event (See the next PS).\nI think this is a fragile approach, but it works with what we have at the moment.\n\nProbably a better approach would be to carry the requeued Event information in the Event (i.e., that the event is a requeue and the timestamp when it happened).",
+      "parentUuid": "c4380e67_d95b0653",
+      "range": {
+        "startLine": 251,
+        "startChar": 0,
+        "endLine": 251,
+        "endChar": 52
+      },
+      "revId": "8f1f584c878831c9bd3afd6a219e98c65f0c6b18",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735"
+    },
+    {
+      "unresolved": true,
+      "key": {
         "uuid": "91f85942_881d6e17",
         "filename": "src/test/java/com/gerritforge/gerrit/plugins/kafka/ManualCommitIT.java",
         "patchSetId": 5
