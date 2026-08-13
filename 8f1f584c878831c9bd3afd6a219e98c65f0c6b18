@@ -1,0 +1,50 @@
+{
+  "comments": [
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "c4380e67_d95b0653",
+        "filename": "src/main/java/com/gerritforge/gerrit/plugins/kafka/subscribe/KafkaEventNativeSubscriber.java",
+        "patchSetId": 5
+      },
+      "lineNbr": 251,
+      "author": {
+        "id": 1015244
+      },
+      "writtenOn": "2026-08-13T08:53:35Z",
+      "side": 1,
+      "message": "I was thinking about how requeuing might affect this.\n\nWe republish exactly the same event, so the requeued copy is equal to the original and ends up replacing it in the map, in the same position.\n\nFor example:\n\n```\noffset 0: X is requeued but not acked yet\noffset 1: Y is consumed\noffset 2: requeued X is consumed\n```\n\nBefore offset 2, the map is:\n\n```\nX(offset 0), Y(offset 1)\n```\n\nAdding the requeued X replaces X’s record but does not move its position:\n\n```\nX(offset 2), Y(offset 1)\n```\n\nAcking `X` now commits after `Y`, but cleanup stops at `X`, so `Y` stays in memory even though it was also committed.\n\nIs the event passed to `ack()` always the exact same object instance that we delivered to the consumer? If so, could we use object identity instead of `equals()` here? That would keep the original and requeued copies as separate entries.\n\nIf not, I think we need a more reliable way to track the pending records.",
+      "range": {
+        "startLine": 251,
+        "startChar": 0,
+        "endLine": 251,
+        "endChar": 52
+      },
+      "revId": "8f1f584c878831c9bd3afd6a219e98c65f0c6b18",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "91f85942_881d6e17",
+        "filename": "src/test/java/com/gerritforge/gerrit/plugins/kafka/ManualCommitIT.java",
+        "patchSetId": 5
+      },
+      "lineNbr": 94,
+      "author": {
+        "id": 1015244
+      },
+      "writtenOn": "2026-08-13T08:53:35Z",
+      "side": 1,
+      "message": "Could we also test this with events in *two* different partitions?\n\nSomething like ack the event from partition 1, then check that the pending event from partition 0 can still be acked.\n\nJust to make sure the cleanup only touches the right partition.",
+      "range": {
+        "startLine": 94,
+        "startChar": 14,
+        "endLine": 94,
+        "endChar": 73
+      },
+      "revId": "8f1f584c878831c9bd3afd6a219e98c65f0c6b18",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735"
+    }
+  ]
+}
