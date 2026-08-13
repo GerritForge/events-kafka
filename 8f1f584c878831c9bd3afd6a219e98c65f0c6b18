@@ -69,6 +69,30 @@
       },
       "revId": "8f1f584c878831c9bd3afd6a219e98c65f0c6b18",
       "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "02ff4253_72e3993e",
+        "filename": "src/test/java/com/gerritforge/gerrit/plugins/kafka/ManualCommitIT.java",
+        "patchSetId": 5
+      },
+      "lineNbr": 94,
+      "author": {
+        "id": 1012541
+      },
+      "writtenOn": "2026-08-13T13:47:24Z",
+      "side": 1,
+      "message": "Added a test to cover this case",
+      "parentUuid": "91f85942_881d6e17",
+      "range": {
+        "startLine": 94,
+        "startChar": 14,
+        "endLine": 94,
+        "endChar": 73
+      },
+      "revId": "8f1f584c878831c9bd3afd6a219e98c65f0c6b18",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735"
     }
   ]
 }
