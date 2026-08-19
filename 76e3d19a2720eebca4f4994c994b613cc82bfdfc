@@ -1,0 +1,21 @@
+{
+  "comments": [
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "508eb341_0e520abc",
+        "filename": "/COMMIT_MSG",
+        "patchSetId": 2
+      },
+      "lineNbr": 9,
+      "author": {
+        "id": 1000000
+      },
+      "writtenOn": "2026-08-19T04:42:03Z",
+      "side": 1,
+      "message": "```suggestion\nReload doesn\u0027t first unload the old plugin, it actually first loads the\n```",
+      "revId": "76e3d19a2720eebca4f4994c994b613cc82bfdfc",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735"
+    }
+  ]
+}
