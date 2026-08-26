@@ -40,7 +40,6 @@ public final class KafkaSession {
   private final KafkaProperties properties;
   private final Provider<Producer<String, String>> producerProvider;
   private final KafkaEventsPublisherMetrics publisherMetrics;
-  private final Log4JKafkaMessageLogger msgLog;
   private final Set<TopicPartition> validatedPartitions = ConcurrentHashMap.newKeySet();
   private volatile Producer<String, String> producer;
 
@@ -48,12 +47,10 @@ public final class KafkaSession {
   public KafkaSession(
       Provider<Producer<String, String>> producerProvider,
       KafkaProperties properties,
-      KafkaEventsPublisherMetrics publisherMetrics,
-      Log4JKafkaMessageLogger msgLog) {
+      KafkaEventsPublisherMetrics publisherMetrics) {
     this.producerProvider = producerProvider;
     this.properties = properties;
     this.publisherMetrics = publisherMetrics;
-    this.msgLog = msgLog;
   }
 
   public boolean isOpen() {
@@ -165,7 +162,6 @@ public final class KafkaSession {
       RecordMetadata metadata = future.get();
       LOGGER.debug("The offset of the record we just sent is: {}", metadata.offset());
       publisherMetrics.incrementBrokerPublishedMessage();
-      msgLog.log(topic, messageBody);
       resultF.set(true);
       return resultF;
     } catch (Throwable e) {
@@ -185,7 +181,6 @@ public final class KafkaSession {
               (metadata, e) -> {
                 if (metadata != null && e == null) {
                   LOGGER.debug("The offset of the record we just sent is: {}", metadata.offset());
-                  msgLog.log(topic, messageBody);
                   publisherMetrics.incrementBrokerPublishedMessage();
                 } else {
                   LOGGER.error("Cannot send the message", e);
