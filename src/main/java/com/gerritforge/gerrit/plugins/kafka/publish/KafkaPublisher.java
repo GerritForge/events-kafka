@@ -11,6 +11,7 @@
 
 package com.gerritforge.gerrit.plugins.kafka.publish;
 
+import com.gerritforge.gerrit.eventbroker.BrokerApiMessageListener;
 import com.gerritforge.gerrit.eventbroker.EventsBrokerConfiguration;
 import com.gerritforge.gerrit.plugins.kafka.config.KafkaProperties;
 import com.gerritforge.gerrit.plugins.kafka.session.KafkaSession;
@@ -108,5 +109,9 @@ public class KafkaPublisher implements EventListener {
   @VisibleForTesting
   public JsonObject eventToJson(Event event) {
     return gson.toJsonTree(event).getAsJsonObject();
+  }
+
+  public void setMessageListener(BrokerApiMessageListener messageListener) {
+    session.setMessageListener(messageListener);
   }
 }
