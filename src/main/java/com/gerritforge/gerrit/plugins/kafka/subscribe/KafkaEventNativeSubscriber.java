@@ -13,10 +13,13 @@ package com.gerritforge.gerrit.plugins.kafka.subscribe;
 import static java.nio.charset.StandardCharsets.UTF_8;
 
 import com.gerritforge.gerrit.eventbroker.AckAwareConsumer;
+import com.gerritforge.gerrit.eventbroker.BrokerApiMessageListener;
 import com.gerritforge.gerrit.eventbroker.MessageAcknowledgementException;
+import com.gerritforge.gerrit.eventbroker.log.MessageLogger;
 import com.gerritforge.gerrit.plugins.kafka.broker.ConsumerExecutor;
 import com.gerritforge.gerrit.plugins.kafka.config.KafkaSubscriberProperties;
 import com.google.common.flogger.FluentLogger;
+import com.google.gerrit.common.Nullable;
 import com.google.gerrit.server.events.Event;
 import com.google.gerrit.server.util.ManualRequestContext;
 import com.google.gerrit.server.util.OneOffRequestContext;
@@ -61,6 +64,7 @@ public class KafkaEventNativeSubscriber implements KafkaEventSubscriber {
 
   private volatile ReceiverJob receiver;
   private final Optional<String> externalGroupId;
+  private volatile BrokerApiMessageListener messageListener;
 
   @Inject
   public KafkaEventNativeSubscriber(
@@ -111,7 +115,7 @@ public class KafkaEventNativeSubscriber implements KafkaEventSubscriber {
       if (partition.isEmpty()) {
         consumer.subscribe(Collections.singleton(topic));
       }
-      receiver = new ReceiverJob(consumer);
+      receiver = new ReceiverJob(consumer, messageListener);
       executor.execute(receiver);
     } finally {
       Thread.currentThread().setContextClassLoader(previousClassLoader);
@@ -166,12 +170,20 @@ public class KafkaEventNativeSubscriber implements KafkaEventSubscriber {
     return externalGroupId;
   }
 
+  @Override
+  public void setMessageListener(BrokerApiMessageListener messageListener) {
+    this.messageListener = messageListener;
+  }
+
   private class ReceiverJob implements Runnable {
     private final Consumer<byte[], byte[]> consumer;
     private final HashMap<Event, ConsumerRecord<byte[], byte[]>> ackRecords = new HashMap<>();
+    @Nullable private final BrokerApiMessageListener messageListener;
 
-    public ReceiverJob(Consumer<byte[], byte[]> consumer) {
+    public ReceiverJob(
+        Consumer<byte[], byte[]> consumer, @Nullable BrokerApiMessageListener messageListener) {
       this.consumer = consumer;
+      this.messageListener = messageListener;
     }
 
     public void wakeup() {
@@ -221,20 +233,27 @@ public class KafkaEventNativeSubscriber implements KafkaEventSubscriber {
               consumer.poll(Duration.ofMillis(configuration.getPollingInterval()));
           consumerRecords.forEach(
               consumerRecord -> {
+                Event event = null;
+                String topic = consumerRecord.topic();
                 try (ManualRequestContext ctx = oneOffCtx.open()) {
-                  Event event =
-                      valueDeserializer.deserialize(consumerRecord.topic(), consumerRecord.value());
+                  event = valueDeserializer.deserialize(topic, consumerRecord.value());
                   if (configuration.isAutoCommitEnabled()) {
                     messageProcessor.accept(event, KafkaAutoAcknowledgement.INSTANCE);
                   } else {
                     ackRecords.put(event, consumerRecord);
                     messageProcessor.accept(event, this::kafkaAck);
                   }
+                  if (messageListener != null) {
+                    messageListener.messageProcessed(MessageLogger.Direction.CONSUME, topic, event);
+                  }
                 } catch (Exception e) {
                   logger.atSevere().withCause(e).log(
                       "Malformed event '%s': [Exception: %s]",
                       new String(consumerRecord.value(), UTF_8), e.toString());
                   subscriberMetrics.incrementSubscriberFailedToConsumeMessage();
+                  if (messageListener != null) {
+                    messageListener.messageFailed(MessageLogger.Direction.CONSUME, topic, event, e);
+                  }
                 }
               });
         }

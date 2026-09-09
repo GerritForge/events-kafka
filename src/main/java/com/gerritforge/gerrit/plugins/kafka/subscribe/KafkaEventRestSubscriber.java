@@ -13,6 +13,7 @@ package com.gerritforge.gerrit.plugins.kafka.subscribe;
 import static java.nio.charset.StandardCharsets.UTF_8;
 
 import com.gerritforge.gerrit.eventbroker.AckAwareConsumer;
+import com.gerritforge.gerrit.eventbroker.BrokerApiMessageListener;
 import com.gerritforge.gerrit.plugins.kafka.broker.ConsumerExecutor;
 import com.gerritforge.gerrit.plugins.kafka.config.KafkaSubscriberProperties;
 import com.gerritforge.gerrit.plugins.kafka.rest.KafkaRestClient;
@@ -375,5 +376,10 @@ public class KafkaEventRestSubscriber implements KafkaEventSubscriber {
       Thread.sleep(reconnectDelay);
       runReceiver();
     }
+  }
+
+  @Override
+  public void setMessageListener(BrokerApiMessageListener messageListener) {
+    throw new UnsupportedOperationException();
   }
 }
