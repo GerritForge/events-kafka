@@ -14,15 +14,19 @@ package com.gerritforge.gerrit.plugins.kafka.api;
 import static com.gerritforge.gerrit.eventbroker.TopicSubscriber.topicSubscriber;
 import static com.gerritforge.gerrit.eventbroker.TopicSubscriberWithGroupId.topicSubscriberWithGroupId;
 import static com.google.common.truth.Truth.assertThat;
+import static org.apache.commons.lang3.builder.EqualsBuilder.reflectionEquals;
 import static org.junit.Assert.assertThrows;
+import static org.junit.Assume.assumeFalse;
 import static org.junit.Assume.assumeTrue;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
 import com.gerritforge.gerrit.eventbroker.AckAwareConsumer;
+import com.gerritforge.gerrit.eventbroker.BrokerApiMessageListener;
 import com.gerritforge.gerrit.eventbroker.EventsBrokerConfiguration;
 import com.gerritforge.gerrit.eventbroker.MessageAcknowledgement;
+import com.gerritforge.gerrit.eventbroker.log.MessageLogger;
 import com.gerritforge.gerrit.plugins.kafka.KafkaContainerProvider;
 import com.gerritforge.gerrit.plugins.kafka.KafkaRestContainer;
 import com.gerritforge.gerrit.plugins.kafka.config.KafkaProperties;
@@ -55,7 +59,9 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeUnit;
+import java.util.function.Function;
 import org.apache.kafka.clients.admin.Admin;
 import org.apache.kafka.clients.admin.NewTopic;
 import org.apache.kafka.clients.producer.KafkaProducer;
@@ -99,6 +105,11 @@ public class KafkaBrokerApiTest {
   private static final String PARTITION_PROJECT_0 = "project-0";
   private static final String PARTITION_PROJECT_1 = "project-1";
   private static final String GROUP_ID = "group_id";
+  private static final Event TEST_PROJECT_CREATED_EVENT = new ProjectCreatedEvent();
+
+  static {
+    TEST_PROJECT_CREATED_EVENT.instanceId = TEST_INSTANCE_ID;
+  }
 
   private Injector injector;
   private KafkaSession session;
@@ -225,6 +236,42 @@ public class KafkaBrokerApiTest {
     }
   }
 
+  public static class TestMessageListener implements BrokerApiMessageListener {
+    public volatile MessageLogger.Direction direction;
+    public volatile String topic;
+    public volatile Object message;
+    public volatile Throwable failure;
+    private CountDownLatch lock = new CountDownLatch(1);
+
+    @Override
+    public void messageProcessed(MessageLogger.Direction direction, String topic, Object message) {
+      this.direction = direction;
+      this.topic = topic;
+      this.message = message;
+      lock.countDown();
+    }
+
+    @Override
+    public void messageFailed(
+        MessageLogger.Direction direction, String topic, Object message, Throwable e) {
+      this.direction = direction;
+      this.topic = topic;
+      this.message = message;
+      this.failure = e;
+      lock.countDown();
+    }
+
+    public boolean await() {
+      try {
+        return lock.await(TEST_TIMEOUT, TEST_TIMEOUT_UNIT);
+      } catch (InterruptedException e) {
+        AssertionError assertionError = new AssertionError(message);
+        assertionError.initCause(e);
+        throw assertionError;
+      }
+    }
+  }
+
   @BeforeClass
   public static void beforeClass() throws Exception {
     kafka = KafkaContainerProvider.get();
@@ -309,10 +356,7 @@ public class KafkaBrokerApiTest {
 
   @Test
   public void shouldSendSyncAndReceiveToTopic() {
-    connectToKafka(
-        new KafkaProperties(
-            false, clientType, getKafkaRestApiUriString(), restApiUsername, restApiPassword));
-    KafkaBrokerApi kafkaBrokerApi = injector.getInstance(KafkaBrokerApi.class);
+    KafkaBrokerApi kafkaBrokerApi = newKafkaBrokerApi();
     String testTopic = testTopic();
     TestConsumer testConsumer = new TestConsumer(1);
     Event testEventMessage = new ProjectCreatedEvent();
@@ -332,10 +376,7 @@ public class KafkaBrokerApiTest {
   public void shouldAckMessageWhenAutoCommitIsDisabled() {
     assumeTrue(clientType == ClientType.NATIVE);
     autoCommitEnabled = false;
-    connectToKafka(
-        new KafkaProperties(
-            false, clientType, getKafkaRestApiUriString(), restApiUsername, restApiPassword));
-    KafkaBrokerApi kafkaBrokerApi = injector.getInstance(KafkaBrokerApi.class);
+    KafkaBrokerApi kafkaBrokerApi = newKafkaBrokerApi();
     String testTopic = testTopic();
     TestConsumer testConsumer = new TestConsumer(1, !AUTO_COMMIT_ENABLED);
     Event testEventMessage = new ProjectCreatedEvent();
@@ -376,10 +417,7 @@ public class KafkaBrokerApiTest {
 
   @Test
   public void shouldSendToTopicAndResetOffset() {
-    connectToKafka(
-        new KafkaProperties(
-            false, clientType, getKafkaRestApiUriString(), restApiUsername, restApiPassword));
-    KafkaBrokerApi kafkaBrokerApi = injector.getInstance(KafkaBrokerApi.class);
+    KafkaBrokerApi kafkaBrokerApi = newKafkaBrokerApi();
     String testTopic = testTopic();
     Event testEventMessage = new ProjectCreatedEvent();
 
@@ -536,10 +574,7 @@ public class KafkaBrokerApiTest {
 
   @Test
   public void shouldRegisterConsumerWithoutExternalGroupId() {
-    connectToKafka(
-        new KafkaProperties(
-            false, clientType, getKafkaRestApiUriString(), restApiUsername, restApiPassword));
-    KafkaBrokerApi kafkaBrokerApi = injector.getInstance(KafkaBrokerApi.class);
+    KafkaBrokerApi kafkaBrokerApi = newKafkaBrokerApi();
     String testTopic = testTopic();
     TestConsumer testConsumer = new TestConsumer(1);
 
@@ -567,10 +602,7 @@ public class KafkaBrokerApiTest {
 
   @Test
   public void shouldRegisterConsumerWithExternalGroupId() {
-    connectToKafka(
-        new KafkaProperties(
-            false, clientType, getKafkaRestApiUriString(), restApiUsername, restApiPassword));
-    KafkaBrokerApi kafkaBrokerApi = injector.getInstance(KafkaBrokerApi.class);
+    KafkaBrokerApi kafkaBrokerApi = newKafkaBrokerApi();
     String testTopic = testTopic();
     String groupId = "group_id_1";
     TestConsumer testConsumer = new TestConsumer(1);
@@ -586,10 +618,7 @@ public class KafkaBrokerApiTest {
 
   @Test
   public void shouldRegisterDifferentConsumersWithTheSameExternalGroupId() {
-    connectToKafka(
-        new KafkaProperties(
-            false, clientType, getKafkaRestApiUriString(), restApiUsername, restApiPassword));
-    KafkaBrokerApi kafkaBrokerApi = injector.getInstance(KafkaBrokerApi.class);
+    KafkaBrokerApi kafkaBrokerApi = newKafkaBrokerApi();
     String testTopic = testTopic();
     String groupId = "group_id_1";
     TestConsumer testConsumer1 = new TestConsumer(1);
@@ -608,10 +637,7 @@ public class KafkaBrokerApiTest {
 
   @Test
   public void shouldRegisterConsumerWithConfiguredGroupIdAndConsumerWithExternalGroupId() {
-    connectToKafka(
-        new KafkaProperties(
-            false, clientType, getKafkaRestApiUriString(), restApiUsername, restApiPassword));
-    KafkaBrokerApi kafkaBrokerApi = injector.getInstance(KafkaBrokerApi.class);
+    KafkaBrokerApi kafkaBrokerApi = newKafkaBrokerApi();
     String testTopic = testTopic();
     String groupId = "group_id_1";
     TestConsumer testConsumer1 = new TestConsumer(1);
@@ -631,10 +657,7 @@ public class KafkaBrokerApiTest {
 
   @Test
   public void shouldNotRegisterTheSameConsumerWithExternalGroupIdTwicePerTopic() {
-    connectToKafka(
-        new KafkaProperties(
-            false, clientType, getKafkaRestApiUriString(), restApiUsername, restApiPassword));
-    KafkaBrokerApi kafkaBrokerApi = injector.getInstance(KafkaBrokerApi.class);
+    KafkaBrokerApi kafkaBrokerApi = newKafkaBrokerApi();
     String testTopic = testTopic();
     String groupId = "group_id_1";
     TestConsumer testConsumer = new TestConsumer(1);
@@ -647,6 +670,71 @@ public class KafkaBrokerApiTest {
     assertThat(kafkaBrokerApi.topicSubscribersWithGroupId())
         .containsExactly(
             topicSubscriberWithGroupId(groupId, topicSubscriber(testTopic, testConsumer)));
+  }
+
+  @Test
+  public void setSendMessageNotifiedToBrokerApiMessageListener()
+      throws ExecutionException, InterruptedException {
+    assumeFalse(isRestApiBroker());
+
+    KafkaBrokerApi kafkaBrokerApi = newKafkaBrokerApi();
+
+    TestMessageListener testMessageListener = new TestMessageListener();
+    kafkaBrokerApi.setMessageListener(testMessageListener);
+
+    assertThat(kafkaBrokerApi.send(testTopic(), TEST_PROJECT_CREATED_EVENT).get()).isTrue();
+
+    assertThat(testMessageListener.await()).isTrue();
+    assertMessageNotifiedToListener(
+        testMessageListener,
+        MessageLogger.Direction.PUBLISH,
+        m -> gson.toJson(TEST_PROJECT_CREATED_EVENT).equals(m.message));
+  }
+
+  @Test
+  public void setReceiveMessageNotifiedBrokerApiMessageListener()
+      throws ExecutionException, InterruptedException {
+    assumeFalse(isRestApiBroker());
+
+    KafkaBrokerApi kafkaBrokerApi = newKafkaBrokerApi();
+    String testTopic = testTopic();
+
+    assertThat(kafkaBrokerApi.send(testTopic, TEST_PROJECT_CREATED_EVENT).get()).isTrue();
+
+    String groupId = "group_id_1";
+    TestConsumer testConsumer = new TestConsumer(1);
+
+    TestMessageListener testMessageListener = new TestMessageListener();
+    kafkaBrokerApi.setMessageListener(testMessageListener);
+    kafkaBrokerApi.receiveAsync(testTopic, groupId, testConsumer);
+    assertThat(testConsumer.await()).isTrue();
+    assertThat(testMessageListener.await()).isTrue();
+
+    assertMessageNotifiedToListener(
+        testMessageListener,
+        MessageLogger.Direction.CONSUME,
+        m -> reflectionEquals(TEST_PROJECT_CREATED_EVENT, m.message));
+  }
+
+  protected boolean isRestApiBroker() {
+    return false;
+  }
+
+  private void assertMessageNotifiedToListener(
+      TestMessageListener testMessageListener,
+      MessageLogger.Direction publish,
+      Function<TestMessageListener, Boolean> testMessageListenerEqualsFunc) {
+    assertThat(testMessageListener.direction).isEqualTo(publish);
+    assertThat(testMessageListenerEqualsFunc.apply(testMessageListener)).isTrue();
+    assertThat(testMessageListener.topic).isEqualTo(testTopic());
+    assertThat(testMessageListener.failure).isNull();
+  }
+
+  private KafkaBrokerApi newKafkaBrokerApi() {
+    connectToKafka(
+        new KafkaProperties(
+            false, clientType, getKafkaRestApiUriString(), restApiUsername, restApiPassword));
+    return injector.getInstance(KafkaBrokerApi.class);
   }
 
   protected String getKafkaRestApiUriString() {

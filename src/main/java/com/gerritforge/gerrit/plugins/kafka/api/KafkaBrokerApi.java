@@ -13,12 +13,14 @@ package com.gerritforge.gerrit.plugins.kafka.api;
 
 import com.gerritforge.gerrit.eventbroker.AckAwareConsumer;
 import com.gerritforge.gerrit.eventbroker.BrokerApi;
+import com.gerritforge.gerrit.eventbroker.BrokerApiMessageListener;
 import com.gerritforge.gerrit.eventbroker.EventsBrokerConfiguration;
 import com.gerritforge.gerrit.eventbroker.TopicSubscriber;
 import com.gerritforge.gerrit.eventbroker.TopicSubscriberWithGroupId;
 import com.gerritforge.gerrit.plugins.kafka.config.KafkaSubscriberProperties;
 import com.gerritforge.gerrit.plugins.kafka.publish.KafkaPublisher;
 import com.gerritforge.gerrit.plugins.kafka.subscribe.KafkaEventSubscriber;
+import com.google.common.base.Preconditions;
 import com.google.common.util.concurrent.ListenableFuture;
 import com.google.gerrit.common.Nullable;
 import com.google.gerrit.server.events.Event;
@@ -28,6 +30,7 @@ import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
 import java.util.Set;
+import java.util.concurrent.atomic.AtomicReference;
 import java.util.stream.Collectors;
 
 public class KafkaBrokerApi implements BrokerApi {
@@ -36,7 +39,9 @@ public class KafkaBrokerApi implements BrokerApi {
   private final KafkaEventSubscriber.Factory kafkaEventSubscriberFactory;
   private final EventsBrokerConfiguration eventsBrokerConfiguration;
   private final boolean autoAck;
-  private List<KafkaEventSubscriber> subscribers;
+  private final AtomicReference<BrokerApiMessageListener> messageListenerRef;
+
+  private final List<KafkaEventSubscriber> subscribers;
 
   @Inject
   public KafkaBrokerApi(
@@ -49,6 +54,7 @@ public class KafkaBrokerApi implements BrokerApi {
     this.eventsBrokerConfiguration = eventsBrokerConfiguration;
     this.autoAck = subscriberProperties.isAutoCommitEnabled();
     subscribers = Collections.synchronizedList(new ArrayList<>());
+    messageListenerRef = new AtomicReference<>();
   }
 
   @Override
@@ -72,10 +78,15 @@ public class KafkaBrokerApi implements BrokerApi {
     KafkaEventSubscriber subscriber =
         kafkaEventSubscriberFactory.create(
             Optional.of(groupId), Optional.of(resolvePartition(topic, partition)));
-    subscriber.subscribe(topic, consumer);
     synchronized (subscribers) {
+      getMessageListener().ifPresent(subscriber::setMessageListener);
       subscribers.add(subscriber);
     }
+    subscriber.subscribe(topic, consumer);
+  }
+
+  private Optional<BrokerApiMessageListener> getMessageListener() {
+    return Optional.ofNullable(messageListenerRef.get());
   }
 
   @Override
@@ -141,13 +152,31 @@ public class KafkaBrokerApi implements BrokerApi {
     return partition;
   }
 
+  @Override
+  @Nullable
+  public BrokerApiMessageListener setMessageListener(BrokerApiMessageListener messageListener) {
+    Preconditions.checkNotNull(messageListener);
+    BrokerApiMessageListener oldMessageListener = messageListenerRef.getAndSet(messageListener);
+    synchronized (subscribers) {
+      publisher.setMessageListener(messageListener);
+      subscribers.forEach(this::setMessageListenerOnSubscriber);
+    }
+
+    return oldMessageListener;
+  }
+
+  private void setMessageListenerOnSubscriber(KafkaEventSubscriber subscriber) {
+    subscriber.setMessageListener(messageListenerRef.get());
+  }
+
   private void receiveAsync(
       String topic, AckAwareConsumer<Event> eventConsumer, Optional<String> externalGroupId) {
     KafkaEventSubscriber subscriber =
         kafkaEventSubscriberFactory.create(externalGroupId, Optional.empty());
-    subscriber.subscribe(topic, eventConsumer);
     synchronized (subscribers) {
+      getMessageListener().ifPresent(subscriber::setMessageListener);
       subscribers.add(subscriber);
     }
+    subscriber.subscribe(topic, eventConsumer);
   }
 }
