@@ -12,6 +12,7 @@
 package com.gerritforge.gerrit.plugins.kafka.subscribe;
 
 import com.gerritforge.gerrit.eventbroker.AckAwareConsumer;
+import com.gerritforge.gerrit.eventbroker.BrokerApiMessageListener;
 import com.google.gerrit.server.events.Event;
 import com.google.inject.assistedinject.Assisted;
 import java.util.Optional;
@@ -60,4 +61,11 @@ public interface KafkaEventSubscriber {
    *     instance
    */
   Optional<String> getExternalGroupId();
+
+  /**
+   * Set the listener for every message received.
+   *
+   * @param messageListener listener to invoke for each message.
+   */
+  void setMessageListener(BrokerApiMessageListener messageListener);
 }
