@@ -11,6 +11,8 @@
 
 package com.gerritforge.gerrit.plugins.kafka.session;
 
+import com.gerritforge.gerrit.eventbroker.BrokerApiMessageListener;
+import com.gerritforge.gerrit.eventbroker.log.MessageLogger;
 import com.gerritforge.gerrit.plugins.kafka.config.KafkaProperties;
 import com.gerritforge.gerrit.plugins.kafka.publish.KafkaEventsPublisherMetrics;
 import com.google.common.util.concurrent.Futures;
@@ -43,6 +45,7 @@ public final class KafkaSession {
   private final Log4JKafkaMessageLogger msgLog;
   private final Set<TopicPartition> validatedPartitions = ConcurrentHashMap.newKeySet();
   private volatile Producer<String, String> producer;
+  private volatile BrokerApiMessageListener messageListener;
 
   @Inject
   public KafkaSession(
@@ -54,6 +57,7 @@ public final class KafkaSession {
     this.properties = properties;
     this.publisherMetrics = publisherMetrics;
     this.msgLog = msgLog;
+    this.messageListener = BrokerApiMessageListener.NOOP_LISTENER;
   }
 
   public boolean isOpen() {
@@ -167,10 +171,12 @@ public final class KafkaSession {
       publisherMetrics.incrementBrokerPublishedMessage();
       msgLog.log(topic, messageBody);
       resultF.set(true);
+      messageListener.messageProcessed(MessageLogger.Direction.PUBLISH, topic, messageBody);
       return resultF;
     } catch (Throwable e) {
       LOGGER.error("Cannot send the message", e);
       publisherMetrics.incrementBrokerFailedToPublishMessage();
+      messageListener.messageFailed(MessageLogger.Direction.PUBLISH, topic, messageBody, e);
       return Futures.immediateFailedFuture(e);
     }
   }
@@ -187,9 +193,13 @@ public final class KafkaSession {
                   LOGGER.debug("The offset of the record we just sent is: {}", metadata.offset());
                   msgLog.log(topic, messageBody);
                   publisherMetrics.incrementBrokerPublishedMessage();
+                  messageListener.messageProcessed(
+                      MessageLogger.Direction.PUBLISH, topic, messageBody);
                 } else {
                   LOGGER.error("Cannot send the message", e);
                   publisherMetrics.incrementBrokerFailedToPublishMessage();
+                  messageListener.messageFailed(
+                      MessageLogger.Direction.PUBLISH, topic, messageBody, e);
                 }
               });
 
@@ -203,5 +213,9 @@ public final class KafkaSession {
       publisherMetrics.incrementBrokerFailedToPublishMessage();
       return Futures.immediateFailedFuture(e);
     }
+  }
+
+  public void setMessageListener(BrokerApiMessageListener messageListener) {
+    this.messageListener = messageListener;
   }
 }
