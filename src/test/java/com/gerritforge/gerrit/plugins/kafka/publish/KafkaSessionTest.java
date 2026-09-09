@@ -78,7 +78,8 @@ public class KafkaSessionTest {
     when(properties.isSendAsync()).thenReturn(false);
     when(kafkaProducer.send(any())).thenReturn(Futures.immediateFuture(recordMetadata));
     objectUnderTest.connect();
-    objectUnderTest.publish(message);
+    objectUnderTest.publish(
+        message, resolvePartition(topic, event), getPayload(event), messageListener);
     verify(publisherMetrics, only()).incrementBrokerPublishedMessage();
   }
 
@@ -87,7 +88,8 @@ public class KafkaSessionTest {
     when(properties.isSendAsync()).thenReturn(false);
     when(kafkaProducer.send(any())).thenReturn(Futures.immediateFuture(recordMetadata));
     objectUnderTest.connect();
-    objectUnderTest.publish(message);
+    objectUnderTest.publish(
+        message, resolvePartition(topic, event), getPayload(event), messageListener);
     verify(msgLog).log(topic, message);
   }
 
@@ -143,7 +145,8 @@ public class KafkaSessionTest {
     when(properties.isSendAsync()).thenReturn(false);
     when(kafkaProducer.send(any())).thenReturn(Futures.immediateFailedFuture(new Exception()));
     objectUnderTest.connect();
-    objectUnderTest.publish(message);
+    objectUnderTest.publish(
+        message, resolvePartition(topic, event), getPayload(event), messageListener);
     verify(publisherMetrics, only()).incrementBrokerFailedToPublishMessage();
   }
 
@@ -153,7 +156,8 @@ public class KafkaSessionTest {
     when(kafkaProducer.send(any())).thenThrow(new RuntimeException("Unexpected runtime exception"));
     try {
       objectUnderTest.connect();
-      objectUnderTest.publish(message);
+      objectUnderTest.publish(
+          message, resolvePartition(topic, event), getPayload(event), messageListener);
     } catch (RuntimeException e) {
       // expected
     }
@@ -166,7 +170,8 @@ public class KafkaSessionTest {
     when(kafkaProducer.send(any(), any())).thenReturn(Futures.immediateFuture(recordMetadata));
 
     objectUnderTest.connect();
-    objectUnderTest.publish(message);
+    objectUnderTest.publish(
+        message, resolvePartition(topic, event), getPayload(event), messageListener);
 
     verify(kafkaProducer).send(any(), callbackCaptor.capture());
     callbackCaptor.getValue().onCompletion(recordMetadata, null);
@@ -179,7 +184,8 @@ public class KafkaSessionTest {
     when(kafkaProducer.send(any(), any())).thenReturn(Futures.immediateFuture(recordMetadata));
 
     objectUnderTest.connect();
-    objectUnderTest.publish(message);
+    objectUnderTest.publish(
+        message, resolvePartition(topic, event), getPayload(event), messageListener);
 
     verify(kafkaProducer).send(any(), callbackCaptor.capture());
     callbackCaptor.getValue().onCompletion(recordMetadata, null);
@@ -193,7 +199,8 @@ public class KafkaSessionTest {
         .thenReturn(Futures.immediateFailedFuture(new Exception()));
 
     objectUnderTest.connect();
-    objectUnderTest.publish(message);
+    objectUnderTest.publish(
+        message, resolvePartition(topic, event), getPayload(event), messageListener);
 
     verify(kafkaProducer).send(any(), callbackCaptor.capture());
     callbackCaptor.getValue().onCompletion(null, new Exception());
@@ -207,7 +214,8 @@ public class KafkaSessionTest {
         .thenThrow(new RuntimeException("Unexpected runtime exception"));
     try {
       objectUnderTest.connect();
-      objectUnderTest.publish(message);
+      objectUnderTest.publish(
+          message, resolvePartition(topic, event), getPayload(event), messageListener);
     } catch (RuntimeException e) {
       // expected
     }

@@ -95,7 +95,8 @@ public class KafkaPublisherTest {
 
     assertThat(
             assertThrows(
-                IllegalArgumentException.class, () -> publisher.publish(TOPIC, new TestEvent())))
+                IllegalArgumentException.class,
+                () -> publisher.publish(TOPIC, new TestEvent(), messageListenerRef.get())))
         .hasMessageThat()
         .isEqualTo(message);
   }
