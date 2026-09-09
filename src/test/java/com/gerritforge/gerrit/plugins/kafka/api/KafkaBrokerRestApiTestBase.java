@@ -63,4 +63,9 @@ public class KafkaBrokerRestApiTestBase extends KafkaBrokerApiTest {
             .waitingFor(new HttpWaitStrategy());
     nginx.start();
   }
+
+  @Override
+  protected boolean isRestApiBroker() {
+    return true;
+  }
 }
