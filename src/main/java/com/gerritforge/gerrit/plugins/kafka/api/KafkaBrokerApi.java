@@ -13,6 +13,7 @@ package com.gerritforge.gerrit.plugins.kafka.api;
 
 import com.gerritforge.gerrit.eventbroker.AckAwareConsumer;
 import com.gerritforge.gerrit.eventbroker.BrokerApi;
+import com.gerritforge.gerrit.eventbroker.log.MessageLogger.Direction;
 import com.gerritforge.gerrit.eventbroker.EventsBrokerConfiguration;
 import com.gerritforge.gerrit.eventbroker.TopicSubscriber;
 import com.gerritforge.gerrit.eventbroker.TopicSubscriberWithGroupId;
@@ -53,7 +54,12 @@ public class KafkaBrokerApi implements BrokerApi {
 
   @Override
   public ListenableFuture<Boolean> send(String topic, Event event) {
-    return publisher.publish(topic, event);
+    return send(topic, event, Direction.PUBLISH);
+  }
+
+  @Override
+  public ListenableFuture<Boolean> send(String topic, Event event, Direction direction) {
+    return publisher.publish(topic, event, direction);
   }
 
   @Override

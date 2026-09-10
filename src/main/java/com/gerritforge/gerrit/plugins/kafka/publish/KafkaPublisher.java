@@ -12,6 +12,7 @@
 package com.gerritforge.gerrit.plugins.kafka.publish;
 
 import com.gerritforge.gerrit.eventbroker.EventsBrokerConfiguration;
+import com.gerritforge.gerrit.eventbroker.log.MessageLogger.Direction;
 import com.gerritforge.gerrit.plugins.kafka.config.KafkaProperties;
 import com.gerritforge.gerrit.plugins.kafka.session.KafkaSession;
 import com.google.common.annotations.VisibleForTesting;
@@ -60,12 +61,12 @@ public class KafkaPublisher implements EventListener {
   @Override
   public void onEvent(Event event) {
     if (session.isOpen()) {
-      publish(properties.getTopic(), event);
+      publish(properties.getTopic(), event, Direction.PUBLISH);
     }
   }
 
-  public ListenableFuture<Boolean> publish(String topic, Event event) {
-    return session.publish(topic, resolvePartition(topic, event), getPayload(event));
+  public ListenableFuture<Boolean> publish(String topic, Event event, Direction direction) {
+    return session.publish(topic, resolvePartition(topic, event), getPayload(event), direction);
   }
 
   private String getPayload(Event event) {
