@@ -20,11 +20,12 @@ import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
+import com.gerritforge.gerrit.eventbroker.BrokerApiMessageListener;
+import com.gerritforge.gerrit.eventbroker.log.MessageLogger.Direction;
 import com.gerritforge.gerrit.plugins.kafka.config.KafkaProperties;
 import com.gerritforge.gerrit.plugins.kafka.config.KafkaProperties.ClientType;
 import com.gerritforge.gerrit.plugins.kafka.session.KafkaProducerProvider;
 import com.gerritforge.gerrit.plugins.kafka.session.KafkaSession;
-import com.gerritforge.gerrit.plugins.kafka.session.Log4JKafkaMessageLogger;
 import com.google.common.util.concurrent.Futures;
 import java.util.List;
 import java.util.Optional;
@@ -53,7 +54,7 @@ public class KafkaSessionTest {
   @Mock KafkaProperties properties;
   @Mock KafkaEventsPublisherMetrics publisherMetrics;
 
-  @Mock Log4JKafkaMessageLogger msgLog;
+  @Mock BrokerApiMessageListener messageListener;
   @Captor ArgumentCaptor<Callback> callbackCaptor;
   @Captor ArgumentCaptor<ProducerRecord<String, String>> recordCaptor;
 
@@ -70,7 +71,8 @@ public class KafkaSessionTest {
 
     recordMetadata = new RecordMetadata(new TopicPartition(topic, 0), 0L, 0L, 0L, 0L, 0, 0);
 
-    objectUnderTest = new KafkaSession(producerProvider, properties, publisherMetrics, msgLog);
+    objectUnderTest =
+        new KafkaSession(producerProvider, properties, publisherMetrics, messageListener);
   }
 
   @Test
@@ -78,7 +80,7 @@ public class KafkaSessionTest {
     when(properties.isSendAsync()).thenReturn(false);
     when(kafkaProducer.send(any())).thenReturn(Futures.immediateFuture(recordMetadata));
     objectUnderTest.connect();
-    objectUnderTest.publish(message);
+    objectUnderTest.publish(message, Direction.PUBLISH);
     verify(publisherMetrics, only()).incrementBrokerPublishedMessage();
   }
 
@@ -87,8 +89,8 @@ public class KafkaSessionTest {
     when(properties.isSendAsync()).thenReturn(false);
     when(kafkaProducer.send(any())).thenReturn(Futures.immediateFuture(recordMetadata));
     objectUnderTest.connect();
-    objectUnderTest.publish(message);
-    verify(msgLog).log(topic, message);
+    objectUnderTest.publish(message, Direction.PUBLISH);
+    verify(messageListener).messageProcessed(Direction.PUBLISH, topic, message);
   }
 
   @Test
@@ -96,7 +98,7 @@ public class KafkaSessionTest {
     when(kafkaProducer.send(any())).thenReturn(Futures.immediateFuture(recordMetadata));
     connectWithPartition();
 
-    objectUnderTest.publish(topic, Optional.of(PARTITION), message);
+    objectUnderTest.publish(topic, Optional.of(PARTITION), message, Direction.PUBLISH);
 
     verify(kafkaProducer).send(recordCaptor.capture());
     assertThat(recordCaptor.getValue().partition()).isEqualTo(PARTITION);
@@ -108,7 +110,7 @@ public class KafkaSessionTest {
     when(kafkaProducer.send(any(), any())).thenReturn(Futures.immediateFuture(recordMetadata));
     connectWithPartition();
 
-    objectUnderTest.publish(topic, Optional.of(PARTITION), message);
+    objectUnderTest.publish(topic, Optional.of(PARTITION), message, Direction.PUBLISH);
 
     verify(kafkaProducer).send(recordCaptor.capture(), any());
     assertThat(recordCaptor.getValue().partition()).isEqualTo(PARTITION);
@@ -122,7 +124,8 @@ public class KafkaSessionTest {
     IllegalArgumentException thrown =
         assertThrows(
             IllegalArgumentException.class,
-            () -> objectUnderTest.publish(topic, Optional.of(PARTITION), message));
+            () ->
+                objectUnderTest.publish(topic, Optional.of(PARTITION), message, Direction.PUBLISH));
 
     assertThat(thrown).hasMessageThat().isEqualTo(String.format(PARTITION_ERROR, PARTITION, topic));
   }
@@ -132,8 +135,8 @@ public class KafkaSessionTest {
     when(kafkaProducer.send(any())).thenReturn(Futures.immediateFuture(recordMetadata));
     connectWithPartition();
 
-    objectUnderTest.publish(topic, Optional.of(PARTITION), message);
-    objectUnderTest.publish(topic, Optional.of(PARTITION), message);
+    objectUnderTest.publish(topic, Optional.of(PARTITION), message, Direction.PUBLISH);
+    objectUnderTest.publish(topic, Optional.of(PARTITION), message, Direction.PUBLISH);
 
     verify(kafkaProducer, times(1)).partitionsFor(topic);
   }
@@ -143,7 +146,7 @@ public class KafkaSessionTest {
     when(properties.isSendAsync()).thenReturn(false);
     when(kafkaProducer.send(any())).thenReturn(Futures.immediateFailedFuture(new Exception()));
     objectUnderTest.connect();
-    objectUnderTest.publish(message);
+    objectUnderTest.publish(message, Direction.PUBLISH);
     verify(publisherMetrics, only()).incrementBrokerFailedToPublishMessage();
   }
 
@@ -153,7 +156,7 @@ public class KafkaSessionTest {
     when(kafkaProducer.send(any())).thenThrow(new RuntimeException("Unexpected runtime exception"));
     try {
       objectUnderTest.connect();
-      objectUnderTest.publish(message);
+      objectUnderTest.publish(message, Direction.PUBLISH);
     } catch (RuntimeException e) {
       // expected
     }
@@ -166,7 +169,7 @@ public class KafkaSessionTest {
     when(kafkaProducer.send(any(), any())).thenReturn(Futures.immediateFuture(recordMetadata));
 
     objectUnderTest.connect();
-    objectUnderTest.publish(message);
+    objectUnderTest.publish(message, Direction.PUBLISH);
 
     verify(kafkaProducer).send(any(), callbackCaptor.capture());
     callbackCaptor.getValue().onCompletion(recordMetadata, null);
@@ -179,11 +182,11 @@ public class KafkaSessionTest {
     when(kafkaProducer.send(any(), any())).thenReturn(Futures.immediateFuture(recordMetadata));
 
     objectUnderTest.connect();
-    objectUnderTest.publish(message);
+    objectUnderTest.publish(message, Direction.PUBLISH);
 
     verify(kafkaProducer).send(any(), callbackCaptor.capture());
     callbackCaptor.getValue().onCompletion(recordMetadata, null);
-    verify(msgLog).log(topic, message);
+    verify(messageListener).messageProcessed(Direction.PUBLISH, topic, message);
   }
 
   @Test
@@ -193,7 +196,7 @@ public class KafkaSessionTest {
         .thenReturn(Futures.immediateFailedFuture(new Exception()));
 
     objectUnderTest.connect();
-    objectUnderTest.publish(message);
+    objectUnderTest.publish(message, Direction.PUBLISH);
 
     verify(kafkaProducer).send(any(), callbackCaptor.capture());
     callbackCaptor.getValue().onCompletion(null, new Exception());
@@ -207,7 +210,7 @@ public class KafkaSessionTest {
         .thenThrow(new RuntimeException("Unexpected runtime exception"));
     try {
       objectUnderTest.connect();
-      objectUnderTest.publish(message);
+      objectUnderTest.publish(message, Direction.PUBLISH);
     } catch (RuntimeException e) {
       // expected
     }

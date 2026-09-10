@@ -11,6 +11,8 @@
 
 package com.gerritforge.gerrit.plugins.kafka.session;
 
+import com.gerritforge.gerrit.eventbroker.BrokerApiMessageListener;
+import com.gerritforge.gerrit.eventbroker.log.MessageLogger.Direction;
 import com.gerritforge.gerrit.plugins.kafka.config.KafkaProperties;
 import com.gerritforge.gerrit.plugins.kafka.publish.KafkaEventsPublisherMetrics;
 import com.google.common.util.concurrent.Futures;
@@ -40,7 +42,7 @@ public final class KafkaSession {
   private final KafkaProperties properties;
   private final Provider<Producer<String, String>> producerProvider;
   private final KafkaEventsPublisherMetrics publisherMetrics;
-  private final Log4JKafkaMessageLogger msgLog;
+  private final BrokerApiMessageListener messageListener;
   private final Set<TopicPartition> validatedPartitions = ConcurrentHashMap.newKeySet();
   private volatile Producer<String, String> producer;
 
@@ -49,11 +51,11 @@ public final class KafkaSession {
       Provider<Producer<String, String>> producerProvider,
       KafkaProperties properties,
       KafkaEventsPublisherMetrics publisherMetrics,
-      Log4JKafkaMessageLogger msgLog) {
+      BrokerApiMessageListener messageListener) {
     this.producerProvider = producerProvider;
     this.properties = properties;
     this.publisherMetrics = publisherMetrics;
-    this.msgLog = msgLog;
+    this.messageListener = messageListener;
   }
 
   public boolean isOpen() {
@@ -165,12 +167,12 @@ public final class KafkaSession {
       RecordMetadata metadata = future.get();
       LOGGER.debug("The offset of the record we just sent is: {}", metadata.offset());
       publisherMetrics.incrementBrokerPublishedMessage();
-      msgLog.log(topic, messageBody);
+      messageListener.messageProcessed(Direction.PUBLISH, topic, messageBody);
       resultF.set(true);
       return resultF;
     } catch (Throwable e) {
-      LOGGER.error("Cannot send the message", e);
       publisherMetrics.incrementBrokerFailedToPublishMessage();
+      messageListener.messageFailed(Direction.PUBLISH, topic, messageBody, e);
       return Futures.immediateFailedFuture(e);
     }
   }
@@ -185,11 +187,11 @@ public final class KafkaSession {
               (metadata, e) -> {
                 if (metadata != null && e == null) {
                   LOGGER.debug("The offset of the record we just sent is: {}", metadata.offset());
-                  msgLog.log(topic, messageBody);
                   publisherMetrics.incrementBrokerPublishedMessage();
+                  messageListener.messageProcessed(Direction.PUBLISH, topic, messageBody);
                 } else {
-                  LOGGER.error("Cannot send the message", e);
                   publisherMetrics.incrementBrokerFailedToPublishMessage();
+                  messageListener.messageFailed(Direction.PUBLISH, topic, messageBody, e);
                 }
               });
 
@@ -199,8 +201,8 @@ public final class KafkaSession {
           Objects::nonNull,
           MoreExecutors.directExecutor());
     } catch (Throwable e) {
-      LOGGER.error("Cannot send the message", e);
       publisherMetrics.incrementBrokerFailedToPublishMessage();
+      messageListener.messageFailed(Direction.PUBLISH, topic, messageBody, e);
       return Futures.immediateFailedFuture(e);
     }
   }
