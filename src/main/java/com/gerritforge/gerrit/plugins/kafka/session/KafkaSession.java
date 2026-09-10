@@ -11,6 +11,8 @@
 
 package com.gerritforge.gerrit.plugins.kafka.session;
 
+import com.gerritforge.gerrit.eventbroker.BrokerApiMessageListener;
+import com.gerritforge.gerrit.eventbroker.log.MessageLogger.Direction;
 import com.gerritforge.gerrit.plugins.kafka.config.KafkaProperties;
 import com.gerritforge.gerrit.plugins.kafka.publish.KafkaEventsPublisherMetrics;
 import com.google.common.util.concurrent.Futures;
@@ -40,7 +42,7 @@ public final class KafkaSession {
   private final KafkaProperties properties;
   private final Provider<Producer<String, String>> producerProvider;
   private final KafkaEventsPublisherMetrics publisherMetrics;
-  private final Log4JKafkaMessageLogger msgLog;
+  private final BrokerApiMessageListener messageListener;
   private final Set<TopicPartition> validatedPartitions = ConcurrentHashMap.newKeySet();
   private volatile Producer<String, String> producer;
 
@@ -49,11 +51,11 @@ public final class KafkaSession {
       Provider<Producer<String, String>> producerProvider,
       KafkaProperties properties,
       KafkaEventsPublisherMetrics publisherMetrics,
-      Log4JKafkaMessageLogger msgLog) {
+      BrokerApiMessageListener messageListener) {
     this.producerProvider = producerProvider;
     this.properties = properties;
     this.publisherMetrics = publisherMetrics;
-    this.msgLog = msgLog;
+    this.messageListener = messageListener;
   }
 
   public boolean isOpen() {
@@ -124,21 +126,22 @@ public final class KafkaSession {
     validatedPartitions.clear();
   }
 
-  public ListenableFuture<Boolean> publish(String messageBody) {
-    return publish(properties.getTopic(), messageBody);
-  }
-
-  public ListenableFuture<Boolean> publish(String topic, String messageBody) {
-    return publish(topic, Optional.empty(), messageBody);
+  public ListenableFuture<Boolean> publish(String messageBody, Direction direction) {
+    return publish(properties.getTopic(), messageBody, direction);
   }
 
   public ListenableFuture<Boolean> publish(
-      String topic, Optional<Integer> partition, String messageBody) {
+      String topic, String messageBody, Direction direction) {
+    return publish(topic, Optional.empty(), messageBody, direction);
+  }
+
+  public ListenableFuture<Boolean> publish(
+      String topic, Optional<Integer> partition, String messageBody, Direction direction) {
     partition.ifPresent(partitionNumber -> validatePartition(topic, partitionNumber));
     if (properties.isSendAsync()) {
-      return publishAsync(topic, partition, messageBody);
+      return publishAsync(topic, partition, messageBody, direction);
     }
-    return publishSync(topic, partition, messageBody);
+    return publishSync(topic, partition, messageBody, direction);
   }
 
   private void validatePartition(String topic, int partition) {
@@ -155,7 +158,7 @@ public final class KafkaSession {
   }
 
   private ListenableFuture<Boolean> publishSync(
-      String topic, Optional<Integer> partition, String messageBody) {
+      String topic, Optional<Integer> partition, String messageBody, Direction direction) {
     SettableFuture<Boolean> resultF = SettableFuture.create();
     try {
       Future<RecordMetadata> future =
@@ -165,18 +168,18 @@ public final class KafkaSession {
       RecordMetadata metadata = future.get();
       LOGGER.debug("The offset of the record we just sent is: {}", metadata.offset());
       publisherMetrics.incrementBrokerPublishedMessage();
-      msgLog.log(topic, messageBody);
+      messageListener.messageProcessed(direction, topic, messageBody);
       resultF.set(true);
       return resultF;
     } catch (Throwable e) {
-      LOGGER.error("Cannot send the message", e);
       publisherMetrics.incrementBrokerFailedToPublishMessage();
+      messageListener.messageFailed(direction, topic, messageBody, e);
       return Futures.immediateFailedFuture(e);
     }
   }
 
   private ListenableFuture<Boolean> publishAsync(
-      String topic, Optional<Integer> partition, String messageBody) {
+      String topic, Optional<Integer> partition, String messageBody, Direction direction) {
     try {
       Future<RecordMetadata> future =
           producer.send(
@@ -185,11 +188,11 @@ public final class KafkaSession {
               (metadata, e) -> {
                 if (metadata != null && e == null) {
                   LOGGER.debug("The offset of the record we just sent is: {}", metadata.offset());
-                  msgLog.log(topic, messageBody);
                   publisherMetrics.incrementBrokerPublishedMessage();
+                  messageListener.messageProcessed(direction, topic, messageBody);
                 } else {
-                  LOGGER.error("Cannot send the message", e);
                   publisherMetrics.incrementBrokerFailedToPublishMessage();
+                  messageListener.messageFailed(direction, topic, messageBody, e);
                 }
               });
 
@@ -199,8 +202,8 @@ public final class KafkaSession {
           Objects::nonNull,
           MoreExecutors.directExecutor());
     } catch (Throwable e) {
-      LOGGER.error("Cannot send the message", e);
       publisherMetrics.incrementBrokerFailedToPublishMessage();
+      messageListener.messageFailed(direction, topic, messageBody, e);
       return Futures.immediateFailedFuture(e);
     }
   }

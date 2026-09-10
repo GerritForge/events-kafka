@@ -11,6 +11,8 @@
 
 package com.gerritforge.gerrit.plugins.kafka;
 
+import com.gerritforge.gerrit.eventbroker.BrokerApiLoggingListener;
+import com.gerritforge.gerrit.eventbroker.BrokerApiMessageListener;
 import com.gerritforge.gerrit.plugins.kafka.api.KafkaApiModule;
 import com.gerritforge.gerrit.plugins.kafka.config.KafkaProperties;
 import com.gerritforge.gerrit.plugins.kafka.config.KafkaProperties.ClientType;
@@ -55,6 +57,8 @@ class Module extends AbstractModule {
   @Override
   protected void configure() {
     DynamicSet.bind(binder(), LifecycleListener.class).to(Manager.class);
+
+    bind(BrokerApiMessageListener.class).to(BrokerApiLoggingListener.class).in(Scopes.SINGLETON);
 
     if (configuration.isSendStreamEvents()) {
       DynamicSet.bind(binder(), EventListener.class).to(KafkaPublisher.class);

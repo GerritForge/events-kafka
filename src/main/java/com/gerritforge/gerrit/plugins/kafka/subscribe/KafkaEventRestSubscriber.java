@@ -13,6 +13,8 @@ package com.gerritforge.gerrit.plugins.kafka.subscribe;
 import static java.nio.charset.StandardCharsets.UTF_8;
 
 import com.gerritforge.gerrit.eventbroker.AckAwareConsumer;
+import com.gerritforge.gerrit.eventbroker.BrokerApiMessageListener;
+import com.gerritforge.gerrit.eventbroker.log.MessageLogger.Direction;
 import com.gerritforge.gerrit.plugins.kafka.broker.ConsumerExecutor;
 import com.gerritforge.gerrit.plugins.kafka.config.KafkaSubscriberProperties;
 import com.gerritforge.gerrit.plugins.kafka.rest.KafkaRestClient;
@@ -76,6 +78,7 @@ public class KafkaEventRestSubscriber implements KafkaEventSubscriber {
   private final KafkaSubscriberProperties configuration;
   private final ExecutorService executor;
   private final KafkaEventSubscriberMetrics subscriberMetrics;
+  private final BrokerApiMessageListener messageListener;
   private final Gson gson;
 
   private AckAwareConsumer<Event> messageProcessor;
@@ -93,6 +96,7 @@ public class KafkaEventRestSubscriber implements KafkaEventSubscriber {
       OneOffRequestContext oneOffCtx,
       @ConsumerExecutor ExecutorService executor,
       KafkaEventSubscriberMetrics subscriberMetrics,
+      BrokerApiMessageListener messageListener,
       KafkaRestClient.Factory restClientFactory,
       @Assisted("externalGroupId") Optional<String> externalGroupId,
       @Assisted("partition") Optional<Integer> partition) {
@@ -104,6 +108,7 @@ public class KafkaEventRestSubscriber implements KafkaEventSubscriber {
     this.oneOffCtx = oneOffCtx;
     this.executor = executor;
     this.subscriberMetrics = subscriberMetrics;
+    this.messageListener = messageListener;
     this.valueDeserializer = valueDeserializer;
     this.externalGroupId = externalGroupId;
     this.configuration = (KafkaSubscriberProperties) configuration.clone();
@@ -222,13 +227,16 @@ public class KafkaEventRestSubscriber implements KafkaEventSubscriber {
                   .get(restClientTimeoutMs, TimeUnit.MILLISECONDS);
           records.forEach(
               consumerRecord -> {
+                String payload = new String(consumerRecord.value(), UTF_8);
                 try (ManualRequestContext ctx = oneOffCtx.open()) {
                   Event event =
                       valueDeserializer.deserialize(consumerRecord.topic(), consumerRecord.value());
+                  messageListener.messageProcessed(
+                      Direction.CONSUME, consumerRecord.topic(), payload);
                   messageProcessor.accept(event, KafkaAutoAcknowledgement.INSTANCE);
                 } catch (Exception e) {
-                  logger.atSevere().withCause(e).log(
-                      "Malformed event '%s'", new String(consumerRecord.value(), UTF_8));
+                  messageListener.messageFailed(
+                      Direction.CONSUME, consumerRecord.topic(), payload, e);
                   subscriberMetrics.incrementSubscriberFailedToConsumeMessage();
                 }
               });

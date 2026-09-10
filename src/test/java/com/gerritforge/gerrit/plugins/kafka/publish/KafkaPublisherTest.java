@@ -16,6 +16,7 @@ import static org.junit.Assert.assertThrows;
 import static org.mockito.Mockito.when;
 
 import com.gerritforge.gerrit.eventbroker.EventsBrokerConfiguration;
+import com.gerritforge.gerrit.eventbroker.log.MessageLogger.Direction;
 import com.gerritforge.gerrit.plugins.kafka.config.KafkaProperties;
 import com.gerritforge.gerrit.plugins.kafka.session.KafkaSession;
 import com.google.gerrit.common.Nullable;
@@ -95,7 +96,7 @@ public class KafkaPublisherTest {
 
     assertThat(
             assertThrows(
-                IllegalArgumentException.class, () -> publisher.publish(TOPIC, new TestEvent())))
+                IllegalArgumentException.class, () -> publisher.publish(TOPIC, new TestEvent(), Direction.PUBLISH)))
         .hasMessageThat()
         .isEqualTo(message);
   }
