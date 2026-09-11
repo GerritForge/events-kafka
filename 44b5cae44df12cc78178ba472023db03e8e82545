@@ -1,0 +1,27 @@
+{
+  "comments": [
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "d13e33af_19dfafb6",
+        "filename": "src/main/java/com/gerritforge/gerrit/plugins/kafka/Module.java",
+        "patchSetId": 6
+      },
+      "lineNbr": 61,
+      "author": {
+        "id": 1020677
+      },
+      "writtenOn": "2026-09-11T05:12:33Z",
+      "side": 1,
+      "message": "Don\u0027t think we need this binding here. Let me see if I can remove it.",
+      "range": {
+        "startLine": 61,
+        "startChar": 0,
+        "endLine": 61,
+        "endChar": 97
+      },
+      "revId": "44b5cae44df12cc78178ba472023db03e8e82545",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735"
+    }
+  ]
+}
