@@ -45,6 +45,52 @@
       },
       "revId": "7f9c57b1716fffc1aa4ea1c3082213396770a935",
       "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "fe040f35_7d2aecac",
+        "filename": "src/main/java/com/gerritforge/gerrit/plugins/kafka/subscribe/KafkaEventNativeSubscriber.java",
+        "patchSetId": 3
+      },
+      "lineNbr": 235,
+      "author": {
+        "id": 1020677
+      },
+      "writtenOn": "2026-09-14T09:12:48Z",
+      "side": 1,
+      "message": "If we agree to merge [1], then this could be `String payload \u003d new String(consumerRecord.value(), UTF_8);`.\n\n[1] https://gerrit-review.googlesource.com/c/modules/events-broker/+/629081",
+      "range": {
+        "startLine": 235,
+        "startChar": 16,
+        "endLine": 235,
+        "endChar": 35
+      },
+      "revId": "7f9c57b1716fffc1aa4ea1c3082213396770a935",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "287e883e_938c7470",
+        "filename": "src/main/java/com/gerritforge/gerrit/plugins/kafka/subscribe/KafkaEventNativeSubscriber.java",
+        "patchSetId": 3
+      },
+      "lineNbr": 245,
+      "author": {
+        "id": 1020677
+      },
+      "writtenOn": "2026-09-14T09:12:48Z",
+      "side": 1,
+      "message": "```suggestion\n                  messageListener.messageProcessed(MessageLogger.Direction.CONSUME, consumerRecord.topic(), event);\n```\n\nSmall one, feel free to ignore, but it would reduce the size of this anonymous function and slightly reduce load on Java GC here as we\u0027re allocating less bytes.",
+      "range": {
+        "startLine": 245,
+        "startChar": 84,
+        "endLine": 245,
+        "endChar": 89
+      },
+      "revId": "7f9c57b1716fffc1aa4ea1c3082213396770a935",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735"
     }
   ]
 }
