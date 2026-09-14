@@ -1,0 +1,50 @@
+{
+  "comments": [
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "ae6e0672_0e0c08f2",
+        "filename": "/COMMIT_MSG",
+        "patchSetId": 3
+      },
+      "lineNbr": 9,
+      "author": {
+        "id": 1020677
+      },
+      "writtenOn": "2026-09-14T09:09:39Z",
+      "side": 1,
+      "message": "```suggestion\nImplement BrokerApiMessageListener interface\n\nReport every published or consumed message to message listener provided\nby events-broker, This removes the necessity for events-kafka to define\nits own message log instance.\n\nBug: Issue 540020486\nDepends-on: https://gerrit-review.googlesource.com/c/modules/events-broker/+/629001\nChange-Id: I998989c16d88d9d6ed2bd7d4d01310d4a90b0fbf\n```",
+      "range": {
+        "startLine": 7,
+        "startChar": 0,
+        "endLine": 9,
+        "endChar": 0
+      },
+      "revId": "7f9c57b1716fffc1aa4ea1c3082213396770a935",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "a0fa91bc_d3564ac3",
+        "filename": "src/main/java/com/gerritforge/gerrit/plugins/kafka/session/KafkaSession.java",
+        "patchSetId": 3
+      },
+      "lineNbr": 59,
+      "author": {
+        "id": 1020677
+      },
+      "writtenOn": "2026-09-14T09:09:39Z",
+      "side": 1,
+      "message": "This shouldn\u0027t be needed anymore. All references to the message logger and the definition in `Log4JKafkaMessageLogger.java` should be removed.",
+      "range": {
+        "startLine": 59,
+        "startChar": 0,
+        "endLine": 59,
+        "endChar": 25
+      },
+      "revId": "7f9c57b1716fffc1aa4ea1c3082213396770a935",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735"
+    }
+  ]
+}
