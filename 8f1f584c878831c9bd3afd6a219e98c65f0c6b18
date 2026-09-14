@@ -48,6 +48,30 @@
       "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735"
     },
     {
+      "unresolved": false,
+      "key": {
+        "uuid": "a59c20a3_8adc0057",
+        "filename": "src/main/java/com/gerritforge/gerrit/plugins/kafka/subscribe/KafkaEventNativeSubscriber.java",
+        "patchSetId": 5
+      },
+      "lineNbr": 251,
+      "author": {
+        "id": 1012541
+      },
+      "writtenOn": "2026-09-14T17:03:06Z",
+      "side": 1,
+      "message": "Change https://review.gerrithub.io/c/GerritForge/multi-site/+/1248657 introduces metadata about requeue in the payload.\n\nOnce this is merged I can use equality.",
+      "parentUuid": "20cd856a_e80903dc",
+      "range": {
+        "startLine": 251,
+        "startChar": 0,
+        "endLine": 251,
+        "endChar": 52
+      },
+      "revId": "8f1f584c878831c9bd3afd6a219e98c65f0c6b18",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735"
+    },
+    {
       "unresolved": true,
       "key": {
         "uuid": "91f85942_881d6e17",
