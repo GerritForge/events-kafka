@@ -14,6 +14,7 @@ package com.gerritforge.gerrit.plugins.kafka;
 import static com.google.common.truth.Truth.assertThat;
 
 import com.gerritforge.gerrit.eventbroker.BrokerApi;
+import com.gerritforge.gerrit.eventbroker.BrokerApiModule;
 import com.gerritforge.gerrit.eventbroker.MessageAcknowledgement;
 import com.gerritforge.gerrit.eventbroker.MessageAcknowledgementException;
 import com.gerritforge.gerrit.plugins.kafka.config.KafkaProperties;
@@ -26,6 +27,7 @@ import com.google.gerrit.server.events.Event;
 import com.google.gerrit.server.events.EventGsonProvider;
 import com.google.gerrit.server.events.ProjectCreatedEvent;
 import com.google.gson.Gson;
+import com.google.inject.Module;
 import java.time.Duration;
 import java.util.List;
 import java.util.Map;
@@ -60,6 +62,11 @@ public class ManualCommitIT extends LightweightPluginDaemonTest {
   private static final long PARTITION_1_EVENT_CREATED_ON = 20L;
   private final Gson gson = new EventGsonProvider().get();
   private KafkaContainer kafka;
+
+  @Override
+  public Module createModule() {
+    return new BrokerApiModule();
+  }
 
   @Override
   public void setUpTestPlugin() throws Exception {
