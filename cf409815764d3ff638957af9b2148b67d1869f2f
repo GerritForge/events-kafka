@@ -1,0 +1,21 @@
+{
+  "comments": [
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "331b8324_44c5dc5c",
+        "filename": "src/main/java/com/gerritforge/gerrit/plugins/kafka/session/KafkaSession.java",
+        "patchSetId": 6
+      },
+      "lineNbr": 15,
+      "author": {
+        "id": 1000000
+      },
+      "writtenOn": "2026-09-16T17:22:48Z",
+      "side": 1,
+      "message": "Not needed.",
+      "revId": "cf409815764d3ff638957af9b2148b67d1869f2f",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735"
+    }
+  ]
+}

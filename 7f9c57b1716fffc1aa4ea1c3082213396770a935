@@ -71,6 +71,30 @@
       "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735"
     },
     {
+      "unresolved": false,
+      "key": {
+        "uuid": "836a4ba7_63c5394d",
+        "filename": "src/main/java/com/gerritforge/gerrit/plugins/kafka/session/KafkaSession.java",
+        "patchSetId": 3
+      },
+      "lineNbr": 59,
+      "author": {
+        "id": 1000000
+      },
+      "writtenOn": "2026-09-16T17:22:48Z",
+      "side": 1,
+      "message": "I would prefer to first support the message listeners and replace the logging infrastructure as a separate change.",
+      "parentUuid": "a0fa91bc_d3564ac3",
+      "range": {
+        "startLine": 59,
+        "startChar": 0,
+        "endLine": 59,
+        "endChar": 25
+      },
+      "revId": "7f9c57b1716fffc1aa4ea1c3082213396770a935",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735"
+    },
+    {
       "unresolved": true,
       "key": {
         "uuid": "fe040f35_7d2aecac",
@@ -96,6 +120,30 @@
     {
       "unresolved": true,
       "key": {
+        "uuid": "b5056aff_53112681",
+        "filename": "src/main/java/com/gerritforge/gerrit/plugins/kafka/subscribe/KafkaEventNativeSubscriber.java",
+        "patchSetId": 3
+      },
+      "lineNbr": 235,
+      "author": {
+        "id": 1000000
+      },
+      "writtenOn": "2026-09-16T17:22:48Z",
+      "side": 1,
+      "message": "Best to address changes to the serialisation separately.",
+      "parentUuid": "fe040f35_7d2aecac",
+      "range": {
+        "startLine": 235,
+        "startChar": 16,
+        "endLine": 235,
+        "endChar": 35
+      },
+      "revId": "7f9c57b1716fffc1aa4ea1c3082213396770a935",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735"
+    },
+    {
+      "unresolved": true,
+      "key": {
         "uuid": "287e883e_938c7470",
         "filename": "src/main/java/com/gerritforge/gerrit/plugins/kafka/subscribe/KafkaEventNativeSubscriber.java",
         "patchSetId": 3
@@ -107,6 +155,30 @@
       "writtenOn": "2026-09-14T09:12:48Z",
       "side": 1,
       "message": "```suggestion\n                  messageListener.messageProcessed(MessageLogger.Direction.CONSUME, consumerRecord.topic(), event);\n```\n\nSmall one, feel free to ignore, but it would reduce the size of this anonymous function and slightly reduce load on Java GC here as we\u0027re allocating less bytes.",
+      "range": {
+        "startLine": 245,
+        "startChar": 84,
+        "endLine": 245,
+        "endChar": 89
+      },
+      "revId": "7f9c57b1716fffc1aa4ea1c3082213396770a935",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "ada5169f_865c527d",
+        "filename": "src/main/java/com/gerritforge/gerrit/plugins/kafka/subscribe/KafkaEventNativeSubscriber.java",
+        "patchSetId": 3
+      },
+      "lineNbr": 245,
+      "author": {
+        "id": 1000000
+      },
+      "writtenOn": "2026-09-16T17:22:48Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "287e883e_938c7470",
       "range": {
         "startLine": 245,
         "startChar": 84,
