@@ -12,6 +12,7 @@
 package com.gerritforge.gerrit.plugins.kafka.session;
 
 import com.gerritforge.gerrit.eventbroker.BrokerApiMessageListener;
+import com.gerritforge.gerrit.eventbroker.log.MessageLogger;
 import com.gerritforge.gerrit.plugins.kafka.config.KafkaProperties;
 import com.gerritforge.gerrit.plugins.kafka.publish.KafkaEventsPublisherMetrics;
 import com.google.common.util.concurrent.Futures;
@@ -41,7 +42,6 @@ public final class KafkaSession {
   private final KafkaProperties properties;
   private final Provider<Producer<String, String>> producerProvider;
   private final KafkaEventsPublisherMetrics publisherMetrics;
-  private final Log4JKafkaMessageLogger msgLog;
   private final Set<TopicPartition> validatedPartitions = ConcurrentHashMap.newKeySet();
   private volatile Producer<String, String> producer;
   private volatile BrokerApiMessageListener messageListener;
@@ -50,12 +50,10 @@ public final class KafkaSession {
   public KafkaSession(
       Provider<Producer<String, String>> producerProvider,
       KafkaProperties properties,
-      KafkaEventsPublisherMetrics publisherMetrics,
-      Log4JKafkaMessageLogger msgLog) {
+      KafkaEventsPublisherMetrics publisherMetrics) {
     this.producerProvider = producerProvider;
     this.properties = properties;
     this.publisherMetrics = publisherMetrics;
-    this.msgLog = msgLog;
     this.messageListener = BrokerApiMessageListener.NOOP_LISTENER;
   }
 
@@ -168,7 +166,6 @@ public final class KafkaSession {
       RecordMetadata metadata = future.get();
       LOGGER.debug("The offset of the record we just sent is: {}", metadata.offset());
       publisherMetrics.incrementBrokerPublishedMessage();
-      msgLog.log(topic, messageBody);
       resultF.set(true);
       messageListener.messageProcessed(MessageLogger.Direction.PUBLISH, topic, messageBody);
       return resultF;
@@ -190,7 +187,6 @@ public final class KafkaSession {
               (metadata, e) -> {
                 if (metadata != null && e == null) {
                   LOGGER.debug("The offset of the record we just sent is: {}", metadata.offset());
-                  msgLog.log(topic, messageBody);
                   publisherMetrics.incrementBrokerPublishedMessage();
                   messageListener.messageProcessed(
                       MessageLogger.Direction.PUBLISH, topic, messageBody);
