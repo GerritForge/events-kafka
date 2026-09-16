@@ -379,7 +379,5 @@ public class KafkaEventRestSubscriber implements KafkaEventSubscriber {
   }
 
   @Override
-  public void setMessageListener(BrokerApiMessageListener messageListener) {
-    throw new UnsupportedOperationException();
-  }
+  public void setMessageListener(BrokerApiMessageListener messageListener) {}
 }
