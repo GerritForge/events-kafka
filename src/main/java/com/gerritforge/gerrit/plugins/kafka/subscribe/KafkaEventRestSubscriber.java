@@ -14,6 +14,7 @@ import static java.nio.charset.StandardCharsets.UTF_8;
 
 import com.gerritforge.gerrit.eventbroker.AckAwareConsumer;
 import com.gerritforge.gerrit.eventbroker.BrokerApiMessageListener;
+import com.gerritforge.gerrit.eventbroker.EventDeserializer;
 import com.gerritforge.gerrit.plugins.kafka.broker.ConsumerExecutor;
 import com.gerritforge.gerrit.plugins.kafka.config.KafkaSubscriberProperties;
 import com.gerritforge.gerrit.plugins.kafka.rest.KafkaRestClient;
@@ -73,7 +74,8 @@ public class KafkaEventRestSubscriber implements KafkaEventSubscriber {
   private final OneOffRequestContext oneOffCtx;
   private final AtomicBoolean closed = new AtomicBoolean(false);
 
-  private final Deserializer<Event> valueDeserializer;
+  private final Deserializer<String> valueDeserializer;
+  private final EventDeserializer eventDeserializer;
   private final KafkaSubscriberProperties configuration;
   private final ExecutorService executor;
   private final KafkaEventSubscriberMetrics subscriberMetrics;
@@ -90,7 +92,8 @@ public class KafkaEventRestSubscriber implements KafkaEventSubscriber {
   @Inject
   public KafkaEventRestSubscriber(
       KafkaSubscriberProperties configuration,
-      Deserializer<Event> valueDeserializer,
+      Deserializer<String> valueDeserializer,
+      EventDeserializer eventDeserializer,
       OneOffRequestContext oneOffCtx,
       @ConsumerExecutor ExecutorService executor,
       KafkaEventSubscriberMetrics subscriberMetrics,
@@ -106,6 +109,7 @@ public class KafkaEventRestSubscriber implements KafkaEventSubscriber {
     this.executor = executor;
     this.subscriberMetrics = subscriberMetrics;
     this.valueDeserializer = valueDeserializer;
+    this.eventDeserializer = eventDeserializer;
     this.externalGroupId = externalGroupId;
     this.configuration = (KafkaSubscriberProperties) configuration.clone();
     externalGroupId.ifPresent(gid -> this.configuration.setProperty("group.id", gid));
@@ -224,8 +228,9 @@ public class KafkaEventRestSubscriber implements KafkaEventSubscriber {
           records.forEach(
               consumerRecord -> {
                 try (ManualRequestContext ctx = oneOffCtx.open()) {
-                  Event event =
+                  String eventString =
                       valueDeserializer.deserialize(consumerRecord.topic(), consumerRecord.value());
+                  Event event = eventDeserializer.deserialize(eventString);
                   messageProcessor.accept(event, KafkaAutoAcknowledgement.INSTANCE);
                 } catch (Exception e) {
                   logger.atSevere().withCause(e).log(
