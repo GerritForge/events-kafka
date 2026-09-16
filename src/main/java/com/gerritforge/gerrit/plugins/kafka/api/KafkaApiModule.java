@@ -17,14 +17,12 @@ import com.gerritforge.gerrit.eventbroker.TopicSubscriberWithGroupId;
 import com.gerritforge.gerrit.plugins.kafka.broker.ConsumerExecutor;
 import com.gerritforge.gerrit.plugins.kafka.config.KafkaProperties.ClientType;
 import com.gerritforge.gerrit.plugins.kafka.config.KafkaSubscriberProperties;
-import com.gerritforge.gerrit.plugins.kafka.subscribe.KafkaEventDeserializer;
 import com.gerritforge.gerrit.plugins.kafka.subscribe.KafkaEventNativeSubscriber;
 import com.gerritforge.gerrit.plugins.kafka.subscribe.KafkaEventRestSubscriber;
 import com.gerritforge.gerrit.plugins.kafka.subscribe.KafkaEventSubscriber;
 import com.google.common.collect.Sets;
 import com.google.gerrit.extensions.registration.DynamicItem;
 import com.google.gerrit.lifecycle.LifecycleModule;
-import com.google.gerrit.server.events.Event;
 import com.google.gerrit.server.git.WorkQueue;
 import com.google.inject.Inject;
 import com.google.inject.Scopes;
@@ -35,6 +33,7 @@ import java.util.Set;
 import java.util.concurrent.ExecutorService;
 import org.apache.kafka.common.serialization.ByteArrayDeserializer;
 import org.apache.kafka.common.serialization.Deserializer;
+import org.apache.kafka.common.serialization.StringDeserializer;
 
 @Singleton
 public class KafkaApiModule extends LifecycleModule {
@@ -84,7 +83,7 @@ public class KafkaApiModule extends LifecycleModule {
             workQueue.createQueue(configuration.getNumberOfSubscribers(), "kafka-subscriber"));
 
     bind(new TypeLiteral<Deserializer<byte[]>>() {}).toInstance(new ByteArrayDeserializer());
-    bind(new TypeLiteral<Deserializer<Event>>() {}).to(KafkaEventDeserializer.class);
+    bind(new TypeLiteral<Deserializer<String>>() {}).to(StringDeserializer.class);
     bind(new TypeLiteral<Set<TopicSubscriber>>() {}).toInstance(activeConsumers);
     bind(new TypeLiteral<Set<TopicSubscriberWithGroupId>>() {})
         .toInstance(activeConsumersWithGroupId);
