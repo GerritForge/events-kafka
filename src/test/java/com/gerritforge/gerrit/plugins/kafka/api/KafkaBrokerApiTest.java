@@ -14,7 +14,6 @@ package com.gerritforge.gerrit.plugins.kafka.api;
 import static com.gerritforge.gerrit.eventbroker.TopicSubscriber.topicSubscriber;
 import static com.gerritforge.gerrit.eventbroker.TopicSubscriberWithGroupId.topicSubscriberWithGroupId;
 import static com.google.common.truth.Truth.assertThat;
-import static org.apache.commons.lang3.builder.EqualsBuilder.reflectionEquals;
 import static org.junit.Assert.assertThrows;
 import static org.junit.Assume.assumeFalse;
 import static org.junit.Assume.assumeTrue;
@@ -697,7 +696,7 @@ public class KafkaBrokerApiTest {
     assertMessageNotifiedToListener(
         testMessageListener,
         MessageLogger.Direction.CONSUME,
-        m -> reflectionEquals(TEST_PROJECT_CREATED_EVENT, m.message));
+        m -> gson.toJson(TEST_PROJECT_CREATED_EVENT).equals(m.message));
   }
 
   protected boolean isRestApiBroker() {
