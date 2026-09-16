@@ -20,11 +20,12 @@ import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
+import com.gerritforge.gerrit.eventbroker.BrokerApiMessageListener;
+import com.gerritforge.gerrit.eventbroker.log.MessageLogger;
 import com.gerritforge.gerrit.plugins.kafka.config.KafkaProperties;
 import com.gerritforge.gerrit.plugins.kafka.config.KafkaProperties.ClientType;
 import com.gerritforge.gerrit.plugins.kafka.session.KafkaProducerProvider;
 import com.gerritforge.gerrit.plugins.kafka.session.KafkaSession;
-import com.gerritforge.gerrit.plugins.kafka.session.Log4JKafkaMessageLogger;
 import com.google.common.util.concurrent.Futures;
 import java.util.List;
 import java.util.Optional;
@@ -52,8 +53,8 @@ public class KafkaSessionTest {
   @Mock KafkaProducerProvider producerProvider;
   @Mock KafkaProperties properties;
   @Mock KafkaEventsPublisherMetrics publisherMetrics;
+  @Mock BrokerApiMessageListener messageListener;
 
-  @Mock Log4JKafkaMessageLogger msgLog;
   @Captor ArgumentCaptor<Callback> callbackCaptor;
   @Captor ArgumentCaptor<ProducerRecord<String, String>> recordCaptor;
 
@@ -70,7 +71,7 @@ public class KafkaSessionTest {
 
     recordMetadata = new RecordMetadata(new TopicPartition(topic, 0), 0L, 0L, 0L, 0L, 0, 0);
 
-    objectUnderTest = new KafkaSession(producerProvider, properties, publisherMetrics, msgLog);
+    objectUnderTest = new KafkaSession(producerProvider, properties, publisherMetrics);
   }
 
   @Test
@@ -83,12 +84,15 @@ public class KafkaSessionTest {
   }
 
   @Test
-  public void shouldUpdateMessageLogFileWhenMessagePublishedInSyncMode() {
+  public void shouldNotifyMessageListenerWhenMessagePublishedInSyncMode() {
     when(properties.isSendAsync()).thenReturn(false);
     when(kafkaProducer.send(any())).thenReturn(Futures.immediateFuture(recordMetadata));
     objectUnderTest.connect();
+    objectUnderTest.setMessageListener(messageListener);
     objectUnderTest.publish(message);
-    verify(msgLog).log(topic, message);
+
+    verify(messageListener, only())
+        .messageProcessed(MessageLogger.Direction.PUBLISH, topic, message);
   }
 
   @Test
@@ -174,16 +178,19 @@ public class KafkaSessionTest {
   }
 
   @Test
-  public void shouldUpdateMessageLogFileWhenMessagePublishedInAsyncMode() {
+  public void shouldNotifyMessageListenerWhenMessagePublishedInAsyncMode() {
     when(properties.isSendAsync()).thenReturn(true);
     when(kafkaProducer.send(any(), any())).thenReturn(Futures.immediateFuture(recordMetadata));
 
     objectUnderTest.connect();
+    objectUnderTest.setMessageListener(messageListener);
     objectUnderTest.publish(message);
 
     verify(kafkaProducer).send(any(), callbackCaptor.capture());
     callbackCaptor.getValue().onCompletion(recordMetadata, null);
-    verify(msgLog).log(topic, message);
+
+    verify(messageListener, only())
+        .messageProcessed(MessageLogger.Direction.PUBLISH, topic, message);
   }
 
   @Test
