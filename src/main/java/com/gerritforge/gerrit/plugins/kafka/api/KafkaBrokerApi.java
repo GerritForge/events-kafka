@@ -13,6 +13,7 @@ package com.gerritforge.gerrit.plugins.kafka.api;
 
 import com.gerritforge.gerrit.eventbroker.AckAwareConsumer;
 import com.gerritforge.gerrit.eventbroker.BrokerApi;
+import com.gerritforge.gerrit.eventbroker.BrokerApiLoggingListener;
 import com.gerritforge.gerrit.eventbroker.BrokerApiMessageListener;
 import com.gerritforge.gerrit.eventbroker.EventsBrokerConfiguration;
 import com.gerritforge.gerrit.eventbroker.TopicSubscriber;
@@ -47,13 +48,15 @@ public class KafkaBrokerApi implements BrokerApi {
       KafkaPublisher publisher,
       KafkaEventSubscriber.Factory kafkaEventSubscriberFactory,
       KafkaSubscriberProperties subscriberProperties,
-      EventsBrokerConfiguration eventsBrokerConfiguration) {
+      EventsBrokerConfiguration eventsBrokerConfiguration,
+      BrokerApiLoggingListener loggingListener) {
     this.publisher = publisher;
     this.kafkaEventSubscriberFactory = kafkaEventSubscriberFactory;
     this.eventsBrokerConfiguration = eventsBrokerConfiguration;
     this.autoAck = subscriberProperties.isAutoCommitEnabled();
     subscribers = Collections.synchronizedList(new ArrayList<>());
     messageListenerRef = new AtomicReference<>();
+    setMessageListener(loggingListener);
   }
 
   @Override

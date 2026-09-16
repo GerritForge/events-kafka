@@ -15,6 +15,7 @@ import static com.google.common.truth.Truth.assertThat;
 import static java.util.concurrent.TimeUnit.MILLISECONDS;
 
 import com.gerritforge.gerrit.eventbroker.BrokerApi;
+import com.gerritforge.gerrit.eventbroker.BrokerApiModule;
 import com.gerritforge.gerrit.plugins.kafka.config.KafkaProperties;
 import com.google.common.base.Stopwatch;
 import com.google.common.collect.Iterables;
@@ -31,6 +32,7 @@ import com.google.gerrit.server.events.Event;
 import com.google.gerrit.server.events.EventGsonProvider;
 import com.google.gerrit.server.events.ProjectCreatedEvent;
 import com.google.gson.Gson;
+import com.google.inject.Module;
 import java.time.Duration;
 import java.util.ArrayList;
 import java.util.Collections;
@@ -51,6 +53,11 @@ public class EventConsumerIT extends LightweightPluginDaemonTest {
   private static final Duration WAIT_FOR_POLL_TIMEOUT = Duration.ofSeconds(30);
   private KafkaContainer kafka;
   private final Gson gson = new EventGsonProvider().get();
+
+  @Override
+  public Module createModule() {
+    return new BrokerApiModule();
+  }
 
   @Override
   public void setUpTestPlugin() throws Exception {
