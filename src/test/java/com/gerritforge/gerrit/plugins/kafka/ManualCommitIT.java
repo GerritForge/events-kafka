@@ -14,6 +14,7 @@ package com.gerritforge.gerrit.plugins.kafka;
 import static com.google.common.truth.Truth.assertThat;
 
 import com.gerritforge.gerrit.eventbroker.BrokerApi;
+import com.gerritforge.gerrit.eventbroker.BrokerApiModule;
 import com.gerritforge.gerrit.eventbroker.MessageAcknowledgement;
 import com.gerritforge.gerrit.plugins.kafka.config.KafkaSubscriberProperties;
 import com.google.gerrit.acceptance.LightweightPluginDaemonTest;
@@ -22,6 +23,7 @@ import com.google.gerrit.acceptance.TestPlugin;
 import com.google.gerrit.acceptance.config.GerritConfig;
 import com.google.gerrit.server.events.Event;
 import com.google.gerrit.server.events.ProjectCreatedEvent;
+import com.google.inject.Module;
 import java.time.Duration;
 import java.util.Map;
 import java.util.Properties;
@@ -44,6 +46,11 @@ import org.testcontainers.containers.KafkaContainer;
 public class ManualCommitIT extends LightweightPluginDaemonTest {
   private static final Duration WAIT_FOR_POLL_TIMEOUT = Duration.ofSeconds(1);
   private KafkaContainer kafka;
+
+  @Override
+  public Module createModule() {
+    return new BrokerApiModule();
+  }
 
   @Override
   public void setUpTestPlugin() throws Exception {
