@@ -104,7 +104,8 @@ public class KafkaSessionTest {
     when(kafkaProducer.send(any())).thenReturn(Futures.immediateFuture(recordMetadata));
     connectWithPartition();
 
-    objectUnderTest.publish(topic, Optional.of(PARTITION), message);
+    objectUnderTest.publish(
+        topic, Optional.of(PARTITION), message, MessageLogger.Direction.PUBLISH);
 
     verify(kafkaProducer).send(recordCaptor.capture());
     assertThat(recordCaptor.getValue().partition()).isEqualTo(PARTITION);
@@ -116,7 +117,8 @@ public class KafkaSessionTest {
     when(kafkaProducer.send(any(), any())).thenReturn(Futures.immediateFuture(recordMetadata));
     connectWithPartition();
 
-    objectUnderTest.publish(topic, Optional.of(PARTITION), message);
+    objectUnderTest.publish(
+        topic, Optional.of(PARTITION), message, MessageLogger.Direction.PUBLISH);
 
     verify(kafkaProducer).send(recordCaptor.capture(), any());
     assertThat(recordCaptor.getValue().partition()).isEqualTo(PARTITION);
@@ -130,7 +132,9 @@ public class KafkaSessionTest {
     IllegalArgumentException thrown =
         assertThrows(
             IllegalArgumentException.class,
-            () -> objectUnderTest.publish(topic, Optional.of(PARTITION), message));
+            () ->
+                objectUnderTest.publish(
+                    topic, Optional.of(PARTITION), message, MessageLogger.Direction.PUBLISH));
 
     assertThat(thrown).hasMessageThat().isEqualTo(String.format(PARTITION_ERROR, PARTITION, topic));
   }
@@ -140,8 +144,10 @@ public class KafkaSessionTest {
     when(kafkaProducer.send(any())).thenReturn(Futures.immediateFuture(recordMetadata));
     connectWithPartition();
 
-    objectUnderTest.publish(topic, Optional.of(PARTITION), message);
-    objectUnderTest.publish(topic, Optional.of(PARTITION), message);
+    objectUnderTest.publish(
+        topic, Optional.of(PARTITION), message, MessageLogger.Direction.PUBLISH);
+    objectUnderTest.publish(
+        topic, Optional.of(PARTITION), message, MessageLogger.Direction.PUBLISH);
 
     verify(kafkaProducer, times(1)).partitionsFor(topic);
   }
