@@ -18,6 +18,7 @@ import com.gerritforge.gerrit.eventbroker.BrokerApiMessageListener;
 import com.gerritforge.gerrit.eventbroker.EventsBrokerConfiguration;
 import com.gerritforge.gerrit.eventbroker.TopicSubscriber;
 import com.gerritforge.gerrit.eventbroker.TopicSubscriberWithGroupId;
+import com.gerritforge.gerrit.eventbroker.log.MessageLogger;
 import com.gerritforge.gerrit.plugins.kafka.config.KafkaSubscriberProperties;
 import com.gerritforge.gerrit.plugins.kafka.publish.KafkaPublisher;
 import com.gerritforge.gerrit.plugins.kafka.subscribe.KafkaEventSubscriber;
@@ -61,7 +62,12 @@ public class KafkaBrokerApi implements BrokerApi {
 
   @Override
   public ListenableFuture<Boolean> send(String topic, Event event) {
-    return publisher.publish(topic, event);
+    return publisher.publish(topic, event, MessageLogger.Direction.PUBLISH);
+  }
+
+  @Override
+  public ListenableFuture<Boolean> requeue(String topic, Event message) {
+    return publisher.publish(topic, message, MessageLogger.Direction.REQUEUE);
   }
 
   @Override
