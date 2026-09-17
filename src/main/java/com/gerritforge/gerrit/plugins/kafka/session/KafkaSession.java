@@ -126,12 +126,15 @@ public final class KafkaSession {
   }
 
   public ListenableFuture<Boolean> publish(
-      String topic, Optional<Integer> partition, String messageBody) {
+      String topic,
+      Optional<Integer> partition,
+      String messageBody,
+      MessageLogger.Direction direction) {
     partition.ifPresent(partitionNumber -> validatePartition(topic, partitionNumber));
     if (properties.isSendAsync()) {
-      return publishAsync(topic, partition, messageBody);
+      return publishAsync(topic, partition, messageBody, direction);
     }
-    return publishSync(topic, partition, messageBody);
+    return publishSync(topic, partition, messageBody, direction);
   }
 
   private void validatePartition(String topic, int partition) {
@@ -148,7 +151,10 @@ public final class KafkaSession {
   }
 
   private ListenableFuture<Boolean> publishSync(
-      String topic, Optional<Integer> partition, String messageBody) {
+      String topic,
+      Optional<Integer> partition,
+      String messageBody,
+      MessageLogger.Direction direction) {
     SettableFuture<Boolean> resultF = SettableFuture.create();
     try {
       Future<RecordMetadata> future =
@@ -159,18 +165,21 @@ public final class KafkaSession {
       LOGGER.debug("The offset of the record we just sent is: {}", metadata.offset());
       publisherMetrics.incrementBrokerPublishedMessage();
       resultF.set(true);
-      messageListener.messageProcessed(MessageLogger.Direction.PUBLISH, topic, messageBody);
+      messageListener.messageProcessed(direction, topic, messageBody);
       return resultF;
     } catch (Throwable e) {
       LOGGER.error("Cannot send the message", e);
       publisherMetrics.incrementBrokerFailedToPublishMessage();
-      messageListener.messageFailed(MessageLogger.Direction.PUBLISH, topic, messageBody, e);
+      messageListener.messageFailed(direction, topic, messageBody, e);
       return Futures.immediateFailedFuture(e);
     }
   }
 
   private ListenableFuture<Boolean> publishAsync(
-      String topic, Optional<Integer> partition, String messageBody) {
+      String topic,
+      Optional<Integer> partition,
+      String messageBody,
+      MessageLogger.Direction direction) {
     try {
       Future<RecordMetadata> future =
           producer.send(
@@ -180,13 +189,11 @@ public final class KafkaSession {
                 if (metadata != null && e == null) {
                   LOGGER.debug("The offset of the record we just sent is: {}", metadata.offset());
                   publisherMetrics.incrementBrokerPublishedMessage();
-                  messageListener.messageProcessed(
-                      MessageLogger.Direction.PUBLISH, topic, messageBody);
+                  messageListener.messageProcessed(direction, topic, messageBody);
                 } else {
                   LOGGER.error("Cannot send the message", e);
                   publisherMetrics.incrementBrokerFailedToPublishMessage();
-                  messageListener.messageFailed(
-                      MessageLogger.Direction.PUBLISH, topic, messageBody, e);
+                  messageListener.messageFailed(direction, topic, messageBody, e);
                 }
               });
 
