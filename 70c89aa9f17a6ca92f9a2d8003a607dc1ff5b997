@@ -57,6 +57,30 @@
       },
       "revId": "70c89aa9f17a6ca92f9a2d8003a607dc1ff5b997",
       "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "085f7f4b_ae56f0c0",
+        "filename": "src/main/java/com/gerritforge/gerrit/plugins/kafka/subscribe/KafkaEventNativeSubscriber.java",
+        "patchSetId": 9
+      },
+      "lineNbr": 222,
+      "author": {
+        "id": 1012541
+      },
+      "writtenOn": "2026-09-18T17:16:06Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "faabfafd_c64940e8",
+      "range": {
+        "startLine": 220,
+        "startChar": 0,
+        "endLine": 222,
+        "endChar": 7
+      },
+      "revId": "70c89aa9f17a6ca92f9a2d8003a607dc1ff5b997",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735"
     }
   ]
 }
