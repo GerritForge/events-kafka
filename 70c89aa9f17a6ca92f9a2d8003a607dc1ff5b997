@@ -1,0 +1,21 @@
+{
+  "comments": [
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "e1be1d1b_53b7e27f",
+        "filename": "src/main/java/com/gerritforge/gerrit/plugins/kafka/subscribe/KafkaEventNativeSubscriber.java",
+        "patchSetId": 9
+      },
+      "lineNbr": 204,
+      "author": {
+        "id": 1000000
+      },
+      "writtenOn": "2026-09-18T12:33:40Z",
+      "side": 1,
+      "message": "Have you estimated how expensive this could be?\n\nI see from the code that involves a full scan of the events associated with a topic partition, looking for the event that has been acked.",
+      "revId": "70c89aa9f17a6ca92f9a2d8003a607dc1ff5b997",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735"
+    }
+  ]
+}
