@@ -1,0 +1,21 @@
+{
+  "comments": [
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "d7231d35_f249103a",
+        "filename": "src/main/java/com/gerritforge/gerrit/plugins/kafka/subscribe/KafkaEventRestSubscriber.java",
+        "patchSetId": 12
+      },
+      "lineNbr": 383,
+      "author": {
+        "id": 1000000
+      },
+      "writtenOn": "2026-09-18T15:11:31Z",
+      "side": 1,
+      "message": "Best to avoid throwing an exception and simply log a warning.",
+      "revId": "f0f01e90b589f214c4148e0730575c09f1f56e65",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735"
+    }
+  ]
+}
