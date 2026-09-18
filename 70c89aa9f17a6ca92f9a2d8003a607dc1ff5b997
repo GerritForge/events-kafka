@@ -16,6 +16,47 @@
       "message": "Have you estimated how expensive this could be?\n\nI see from the code that involves a full scan of the events associated with a topic partition, looking for the event that has been acked.",
       "revId": "70c89aa9f17a6ca92f9a2d8003a607dc1ff5b997",
       "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "266268d4_f7c05412",
+        "filename": "src/main/java/com/gerritforge/gerrit/plugins/kafka/subscribe/KafkaEventNativeSubscriber.java",
+        "patchSetId": 9
+      },
+      "lineNbr": 204,
+      "author": {
+        "id": 1000000
+      },
+      "writtenOn": "2026-09-18T14:24:39Z",
+      "side": 1,
+      "message": "I believe I have understood the reason why we are doing this.",
+      "parentUuid": "e1be1d1b_53b7e27f",
+      "revId": "70c89aa9f17a6ca92f9a2d8003a607dc1ff5b997",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "faabfafd_c64940e8",
+        "filename": "src/main/java/com/gerritforge/gerrit/plugins/kafka/subscribe/KafkaEventNativeSubscriber.java",
+        "patchSetId": 9
+      },
+      "lineNbr": 222,
+      "author": {
+        "id": 1000000
+      },
+      "writtenOn": "2026-09-18T14:24:39Z",
+      "side": 1,
+      "message": "If we ack every single message, we\u0027ll end up removing the `LinkedHashMap\u003c\u003e()` over and over again for every single event on the same partition.\n\nCan we just avoid doing it? It\u0027s an empty map after all, and it will get populated again upon the reception of the next event.",
+      "range": {
+        "startLine": 220,
+        "startChar": 0,
+        "endLine": 222,
+        "endChar": 7
+      },
+      "revId": "70c89aa9f17a6ca92f9a2d8003a607dc1ff5b997",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735"
     }
   ]
 }
