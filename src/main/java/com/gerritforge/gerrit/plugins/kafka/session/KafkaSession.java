@@ -125,14 +125,6 @@ public final class KafkaSession {
     validatedPartitions.clear();
   }
 
-  public ListenableFuture<Boolean> publish(String messageBody) {
-    return publish(properties.getTopic(), messageBody);
-  }
-
-  public ListenableFuture<Boolean> publish(String topic, String messageBody) {
-    return publish(topic, Optional.empty(), messageBody);
-  }
-
   public ListenableFuture<Boolean> publish(
       String topic, Optional<Integer> partition, String messageBody) {
     partition.ifPresent(partitionNumber -> validatePartition(topic, partitionNumber));
