@@ -1,0 +1,27 @@
+{
+  "comments": [
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "f9b10a49_a188725b",
+        "filename": "src/test/java/com/gerritforge/gerrit/plugins/kafka/publish/KafkaSessionTest.java",
+        "patchSetId": 2
+      },
+      "lineNbr": 239,
+      "author": {
+        "id": 1000000
+      },
+      "writtenOn": "2026-09-20T15:36:18Z",
+      "side": 1,
+      "message": "```suggestion\n  private ListenableFuture\u003cBoolean\u003e publish(KafkaSession kafkaSession, String messageBody) {\n```",
+      "range": {
+        "startLine": 239,
+        "startChar": 2,
+        "endLine": 239,
+        "endChar": 8
+      },
+      "revId": "9a10ade62f2713cfc45cf05dbe540864cd4267df",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735"
+    }
+  ]
+}
