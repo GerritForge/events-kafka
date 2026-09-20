@@ -27,9 +27,9 @@ import com.gerritforge.gerrit.plugins.kafka.config.KafkaProperties.ClientType;
 import com.gerritforge.gerrit.plugins.kafka.session.KafkaProducerProvider;
 import com.gerritforge.gerrit.plugins.kafka.session.KafkaSession;
 import com.google.common.util.concurrent.Futures;
-import com.google.common.util.concurrent.ListenableFuture;
 import java.util.List;
 import java.util.Optional;
+import java.util.concurrent.TimeUnit;
 import org.apache.kafka.clients.producer.Callback;
 import org.apache.kafka.clients.producer.Producer;
 import org.apache.kafka.clients.producer.ProducerRecord;
@@ -48,6 +48,7 @@ import org.mockito.junit.MockitoJUnitRunner;
 public class KafkaSessionTest {
   private static final int PARTITION = 1;
   private static final String PARTITION_ERROR = "Kafka partition %d does not exist for topic %s";
+  private static final long TEST_TIMEOUT_SEC = 30;
 
   KafkaSession objectUnderTest;
   @Mock Producer<String, String> kafkaProducer;
@@ -80,7 +81,7 @@ public class KafkaSessionTest {
     when(properties.isSendAsync()).thenReturn(false);
     when(kafkaProducer.send(any())).thenReturn(Futures.immediateFuture(recordMetadata));
     objectUnderTest.connect();
-    publish(objectUnderTest, message);
+    publish(message);
     verify(publisherMetrics, only()).incrementBrokerPublishedMessage();
   }
 
@@ -90,7 +91,7 @@ public class KafkaSessionTest {
     when(kafkaProducer.send(any())).thenReturn(Futures.immediateFuture(recordMetadata));
     objectUnderTest.connect();
     objectUnderTest.setMessageListener(messageListener);
-    publish(objectUnderTest, message);
+    publish(message);
 
     verify(messageListener, only())
         .messageProcessed(MessageLogger.Direction.PUBLISH, topic, message);
@@ -236,7 +237,11 @@ public class KafkaSessionTest {
     objectUnderTest.connect();
   }
 
-  private ListenableFuture<Boolean> publish(KafkaSession kafkaSession, String messageBody) {
-    return kafkaSession.publish(properties.getTopic(), Optional.empty(), messageBody);
+  private void publish(String messageBody) throws Exception {
+    assertThat(
+            objectUnderTest
+                .publish(properties.getTopic(), Optional.empty(), messageBody)
+                .get(TEST_TIMEOUT_SEC, TimeUnit.SECONDS))
+        .isTrue();
   }
 }
