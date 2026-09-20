@@ -22,6 +22,30 @@
       },
       "revId": "9a10ade62f2713cfc45cf05dbe540864cd4267df",
       "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "5af39e05_3fe155a4",
+        "filename": "src/test/java/com/gerritforge/gerrit/plugins/kafka/publish/KafkaSessionTest.java",
+        "patchSetId": 2
+      },
+      "lineNbr": 239,
+      "author": {
+        "id": 1000000
+      },
+      "writtenOn": "2026-09-20T15:36:44Z",
+      "side": 1,
+      "message": "Fix applied.",
+      "parentUuid": "f9b10a49_a188725b",
+      "range": {
+        "startLine": 239,
+        "startChar": 2,
+        "endLine": 239,
+        "endChar": 8
+      },
+      "revId": "9a10ade62f2713cfc45cf05dbe540864cd4267df",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735"
     }
   ]
 }
