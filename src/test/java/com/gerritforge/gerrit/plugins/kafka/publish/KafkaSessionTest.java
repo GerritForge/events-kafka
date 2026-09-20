@@ -30,6 +30,8 @@ import com.google.common.util.concurrent.Futures;
 import com.google.common.util.concurrent.ListenableFuture;
 import java.util.List;
 import java.util.Optional;
+import java.util.concurrent.ExecutionException;
+import java.util.concurrent.TimeUnit;
 import org.apache.kafka.clients.producer.Callback;
 import org.apache.kafka.clients.producer.Producer;
 import org.apache.kafka.clients.producer.ProducerRecord;
@@ -48,6 +50,7 @@ import org.mockito.junit.MockitoJUnitRunner;
 public class KafkaSessionTest {
   private static final int PARTITION = 1;
   private static final String PARTITION_ERROR = "Kafka partition %d does not exist for topic %s";
+  private static final long TEST_TIMEOUT_SEC = 30;
 
   KafkaSession objectUnderTest;
   @Mock Producer<String, String> kafkaProducer;
@@ -76,21 +79,21 @@ public class KafkaSessionTest {
   }
 
   @Test
-  public void shouldIncrementBrokerMetricCounterWhenMessagePublishedInSyncMode() {
+  public void shouldIncrementBrokerMetricCounterWhenMessagePublishedInSyncMode() throws Exception {
     when(properties.isSendAsync()).thenReturn(false);
     when(kafkaProducer.send(any())).thenReturn(Futures.immediateFuture(recordMetadata));
     objectUnderTest.connect();
-    publish(objectUnderTest, message);
+    publishSyncAndAssertSuccess(message);
     verify(publisherMetrics, only()).incrementBrokerPublishedMessage();
   }
 
   @Test
-  public void shouldNotifyMessageListenerWhenMessagePublishedInSyncMode() {
+  public void shouldNotifyMessageListenerWhenMessagePublishedInSyncMode() throws Exception {
     when(properties.isSendAsync()).thenReturn(false);
     when(kafkaProducer.send(any())).thenReturn(Futures.immediateFuture(recordMetadata));
     objectUnderTest.connect();
     objectUnderTest.setMessageListener(messageListener);
-    publish(objectUnderTest, message);
+    publishSyncAndAssertSuccess(message);
 
     verify(messageListener, only())
         .messageProcessed(MessageLogger.Direction.PUBLISH, topic, message);
@@ -148,7 +151,7 @@ public class KafkaSessionTest {
     when(properties.isSendAsync()).thenReturn(false);
     when(kafkaProducer.send(any())).thenReturn(Futures.immediateFailedFuture(new Exception()));
     objectUnderTest.connect();
-    publish(objectUnderTest, message);
+    assertThrows(ExecutionException.class, () -> publishSyncAndAssertSuccess(message));
     verify(publisherMetrics, only()).incrementBrokerFailedToPublishMessage();
   }
 
@@ -156,36 +159,35 @@ public class KafkaSessionTest {
   public void shouldIncrementBrokerFailedMetricCounterWhenUnexpectedExceptionInSyncMode() {
     when(properties.isSendAsync()).thenReturn(false);
     when(kafkaProducer.send(any())).thenThrow(new RuntimeException("Unexpected runtime exception"));
-    try {
-      objectUnderTest.connect();
-      publish(objectUnderTest, message);
-    } catch (RuntimeException e) {
-      // expected
-    }
+    objectUnderTest.connect();
+    assertThrows(ExecutionException.class, () -> publishSyncAndAssertSuccess(message));
     verify(publisherMetrics, only()).incrementBrokerFailedToPublishMessage();
   }
 
   @Test
-  public void shouldIncrementBrokerMetricCounterWhenMessagePublishedInAsyncMode() {
+  public void shouldIncrementBrokerMetricCounterWhenMessagePublishedInAsyncMode() throws Exception {
     when(properties.isSendAsync()).thenReturn(true);
     when(kafkaProducer.send(any(), any())).thenReturn(Futures.immediateFuture(recordMetadata));
 
     objectUnderTest.connect();
-    publish(objectUnderTest, message);
+    ListenableFuture<Boolean> publishFuture = publishAsync(message);
 
     verify(kafkaProducer).send(any(), callbackCaptor.capture());
     callbackCaptor.getValue().onCompletion(recordMetadata, null);
+
+    assertThat(publishFuture.get(TEST_TIMEOUT_SEC, TimeUnit.SECONDS)).isTrue();
+
     verify(publisherMetrics, only()).incrementBrokerPublishedMessage();
   }
 
   @Test
-  public void shouldNotifyMessageListenerWhenMessagePublishedInAsyncMode() {
+  public void shouldNotifyMessageListenerWhenMessagePublishedInAsyncMode() throws Exception {
     when(properties.isSendAsync()).thenReturn(true);
     when(kafkaProducer.send(any(), any())).thenReturn(Futures.immediateFuture(recordMetadata));
 
     objectUnderTest.connect();
     objectUnderTest.setMessageListener(messageListener);
-    publish(objectUnderTest, message);
+    publishSyncAndAssertSuccess(message);
 
     verify(kafkaProducer).send(any(), callbackCaptor.capture());
     callbackCaptor.getValue().onCompletion(recordMetadata, null);
@@ -195,13 +197,14 @@ public class KafkaSessionTest {
   }
 
   @Test
-  public void shouldIncrementBrokerFailedMetricCounterWhenMessagePublishingFailedInAsyncMode() {
+  public void shouldIncrementBrokerFailedMetricCounterWhenMessagePublishingFailedInAsyncMode()
+      throws Exception {
     when(properties.isSendAsync()).thenReturn(true);
     when(kafkaProducer.send(any(), any()))
         .thenReturn(Futures.immediateFailedFuture(new Exception()));
 
     objectUnderTest.connect();
-    publish(objectUnderTest, message);
+    assertThrows(ExecutionException.class, () -> publishSyncAndAssertSuccess(message));
 
     verify(kafkaProducer).send(any(), callbackCaptor.capture());
     callbackCaptor.getValue().onCompletion(null, new Exception());
@@ -209,16 +212,14 @@ public class KafkaSessionTest {
   }
 
   @Test
-  public void shouldIncrementBrokerFailedMetricCounterWhenUnexpectedExceptionInAsyncMode() {
+  public void shouldIncrementBrokerFailedMetricCounterWhenUnexpectedExceptionInAsyncMode()
+      throws Exception {
     when(properties.isSendAsync()).thenReturn(true);
     when(kafkaProducer.send(any(), any()))
         .thenThrow(new RuntimeException("Unexpected runtime exception"));
-    try {
-      objectUnderTest.connect();
-      publish(objectUnderTest, message);
-    } catch (RuntimeException e) {
-      // expected
-    }
+    objectUnderTest.connect();
+    assertThrows(ExecutionException.class, () -> publishSyncAndAssertSuccess(message));
+
     verify(publisherMetrics, only()).incrementBrokerFailedToPublishMessage();
   }
 
@@ -236,7 +237,11 @@ public class KafkaSessionTest {
     objectUnderTest.connect();
   }
 
-  private ListenableFuture<Boolean> publish(KafkaSession kafkaSession, String messageBody) {
-    return kafkaSession.publish(properties.getTopic(), Optional.empty(), messageBody);
+  private void publishSyncAndAssertSuccess(String messageBody) throws Exception {
+    assertThat(publishAsync(messageBody).get(TEST_TIMEOUT_SEC, TimeUnit.SECONDS)).isTrue();
+  }
+
+  private ListenableFuture<Boolean> publishAsync(String messageBody) throws Exception {
+    return objectUnderTest.publish(properties.getTopic(), Optional.empty(), messageBody);
   }
 }
