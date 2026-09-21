@@ -67,12 +67,6 @@ public class KafkaApiModule extends LifecycleModule {
                 .implement(KafkaEventSubscriber.class, KafkaEventNativeSubscriber.class)
                 .build(KafkaEventSubscriber.Factory.class));
         break;
-      case REST:
-        install(
-            new FactoryModuleBuilder()
-                .implement(KafkaEventSubscriber.class, KafkaEventRestSubscriber.class)
-                .build(KafkaEventSubscriber.Factory.class));
-        break;
       default:
         throw new IllegalArgumentException("Unsupported Kafka client type " + clientType);
     }
