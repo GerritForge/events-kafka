@@ -15,7 +15,6 @@ import static com.gerritforge.gerrit.eventbroker.TopicSubscriber.topicSubscriber
 import static com.gerritforge.gerrit.eventbroker.TopicSubscriberWithGroupId.topicSubscriberWithGroupId;
 import static com.google.common.truth.Truth.assertThat;
 import static org.junit.Assert.assertThrows;
-import static org.junit.Assume.assumeFalse;
 import static org.junit.Assume.assumeTrue;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.mock;
@@ -27,13 +26,11 @@ import com.gerritforge.gerrit.eventbroker.EventsBrokerConfiguration;
 import com.gerritforge.gerrit.eventbroker.MessageAcknowledgement;
 import com.gerritforge.gerrit.eventbroker.log.MessageLogger;
 import com.gerritforge.gerrit.plugins.kafka.KafkaContainerProvider;
-import com.gerritforge.gerrit.plugins.kafka.KafkaRestContainer;
 import com.gerritforge.gerrit.plugins.kafka.config.KafkaProperties;
 import com.gerritforge.gerrit.plugins.kafka.config.KafkaProperties.ClientType;
 import com.gerritforge.gerrit.plugins.kafka.config.KafkaSubscriberProperties;
 import com.gerritforge.gerrit.plugins.kafka.session.KafkaProducerProvider;
 import com.gerritforge.gerrit.plugins.kafka.session.KafkaSession;
-import com.google.common.base.Strings;
 import com.google.gerrit.extensions.registration.DynamicMap;
 import com.google.gerrit.metrics.MetricMaker;
 import com.google.gerrit.server.events.Event;
@@ -83,17 +80,12 @@ import org.testcontainers.containers.KafkaContainer;
 public class KafkaBrokerApiTest {
 
   static KafkaContainer kafka;
-  static KafkaRestContainer kafkaRest;
-  static KafkaRestContainer kafkaRestWithId;
   static GenericContainer<?> nginx;
-  static String restApiUsername;
-  static String restApiPassword;
 
   static final boolean AUTO_COMMIT_ENABLED = true;
   static final int TEST_NUM_SUBSCRIBERS = 1;
   static final String TEST_GROUP_ID = KafkaBrokerApiTest.class.getName();
   static final int TEST_POLLING_INTERVAL_MSEC = 100;
-  static final String KAFKA_REST_ID = "kafka-rest-instance-0";
   private static final int TEST_THREAD_POOL_SIZE = 10;
   private static final String TEST_INSTANCE_ID = "test-instance-id";
   private static final TimeUnit TEST_TIMEOUT_UNIT = TimeUnit.SECONDS;
@@ -175,10 +167,7 @@ public class KafkaBrokerApiTest {
               TEST_GROUP_ID,
               TEST_NUM_SUBSCRIBERS,
               ClientType.NATIVE,
-              autoCommitEnabled,
-              null,
-              null,
-              null);
+              autoCommitEnabled);
       bind(KafkaSubscriberProperties.class).toInstance(kafkaSubscriberProperties);
     }
   }
@@ -274,10 +263,6 @@ public class KafkaBrokerApiTest {
   public static void beforeClass() throws Exception {
     kafka = KafkaContainerProvider.get();
     kafka.start();
-    kafkaRestWithId = new KafkaRestContainer(kafka, KAFKA_REST_ID, isAuthenticationProvided());
-    kafkaRestWithId.start();
-    kafkaRest = new KafkaRestContainer(kafka, isAuthenticationProvided());
-    kafkaRest.start();
 
     System.setProperty(ProducerConfig.BOOTSTRAP_SERVERS_CONFIG, kafka.getBootstrapServers());
   }
@@ -291,8 +276,6 @@ public class KafkaBrokerApiTest {
   @AfterClass
   public static void afterClass() {
     stopContainer(kafka);
-    stopContainer(kafkaRest);
-    stopContainer(kafkaRestWithId);
     stopContainer(nginx);
   }
 
@@ -302,33 +285,8 @@ public class KafkaBrokerApiTest {
     }
   }
 
-  private static boolean isAuthenticationProvided() {
-    return !Strings.isNullOrEmpty(restApiUsername) && !Strings.isNullOrEmpty(restApiPassword);
-  }
-
   protected TestModule newTestModule(KafkaProperties kafkaProperties) {
     return new TestModule(kafkaProperties, autoCommitEnabled);
-  }
-
-  @Test
-  public void shouldFailWhenManualAckIsConfiguredWithRestClient() {
-    IllegalArgumentException thrown =
-        assertThrows(
-            IllegalArgumentException.class,
-            () ->
-                new KafkaSubscriberProperties(
-                    TEST_POLLING_INTERVAL_MSEC,
-                    TEST_GROUP_ID,
-                    TEST_NUM_SUBSCRIBERS,
-                    ClientType.REST,
-                    !AUTO_COMMIT_ENABLED,
-                    getKafkaRestApiUriString(),
-                    restApiUsername,
-                    restApiPassword));
-
-    assertThat(thrown)
-        .hasMessageThat()
-        .contains("enableAutoCommit=false is not supported when clientType=REST");
   }
 
   public void connectToKafka(KafkaProperties kafkaProperties) {
@@ -394,9 +352,7 @@ public class KafkaBrokerApiTest {
 
   @Test
   public void shouldSendAsyncAndReceiveToTopic() {
-    connectToKafka(
-        new KafkaProperties(
-            true, clientType, getKafkaRestApiUriString(), restApiUsername, restApiPassword));
+    connectToKafka(new KafkaProperties(true, clientType));
     KafkaBrokerApi kafkaBrokerApi = injector.getInstance(KafkaBrokerApi.class);
     String testTopic = testTopic();
     TestConsumer testConsumer = new TestConsumer(1);
@@ -435,9 +391,7 @@ public class KafkaBrokerApiTest {
 
   @Test
   public void shouldConsumerWithGroupIdConsumeMessage() {
-    connectToKafka(
-        new KafkaProperties(
-            true, clientType, getKafkaRestApiUriString(), restApiUsername, restApiPassword));
+    connectToKafka(new KafkaProperties(true, clientType));
     KafkaBrokerApi kafkaBrokerApi = injector.getInstance(KafkaBrokerApi.class);
     String testTopic = testTopic();
     TestConsumer testConsumer = new TestConsumer(1);
@@ -524,28 +478,6 @@ public class KafkaBrokerApiTest {
         .hasMessageThat()
         .isEqualTo(String.format("Kafka partition 1 does not exist for topic %s", testTopic));
     assertThat(kafkaBrokerApi.topicSubscribersWithGroupId()).isEmpty();
-  }
-
-  @Test
-  public void shouldFailWhenRestSubscriberIsCreatedForPartition() {
-    assumeTrue(clientType == ClientType.REST);
-    KafkaBrokerApi kafkaBrokerApi = connectBroker();
-    String testTopic = testTopic();
-
-    configurePartitions(testTopic, PARTITION_PROJECT_0);
-    IllegalArgumentException thrown =
-        assertThrows(
-            IllegalArgumentException.class,
-            () ->
-                kafkaBrokerApi.receiveAsyncWithPartition(
-                    testTopic,
-                    PARTITION_PROJECT_0,
-                    GROUP_ID,
-                    new TestConsumer(ONE_MESSAGE_EXPECTED)));
-
-    assertThat(thrown)
-        .hasMessageThat()
-        .contains("Partition-aware subscriptions are not supported with clientType=REST");
   }
 
   @Test
@@ -673,8 +605,6 @@ public class KafkaBrokerApiTest {
   @Test
   public void setSendMessageNotifiedToBrokerApiMessageListener()
       throws ExecutionException, InterruptedException {
-    assumeFalse(isRestApiBroker());
-
     KafkaBrokerApi kafkaBrokerApi = newKafkaBrokerApi();
 
     TestMessageListener testMessageListener = new TestMessageListener();
@@ -692,8 +622,6 @@ public class KafkaBrokerApiTest {
   @Test
   public void setReceiveMessageNotifiedBrokerApiMessageListener()
       throws ExecutionException, InterruptedException {
-    assumeFalse(isRestApiBroker());
-
     KafkaBrokerApi kafkaBrokerApi = newKafkaBrokerApi();
     String testTopic = testTopic();
 
@@ -714,10 +642,6 @@ public class KafkaBrokerApiTest {
         m -> gson.toJson(TEST_PROJECT_CREATED_EVENT).equals(m.message));
   }
 
-  protected boolean isRestApiBroker() {
-    return false;
-  }
-
   private void assertMessageNotifiedToListener(
       TestMessageListener testMessageListener,
       MessageLogger.Direction publish,
@@ -729,24 +653,12 @@ public class KafkaBrokerApiTest {
   }
 
   private KafkaBrokerApi newKafkaBrokerApi() {
-    connectToKafka(
-        new KafkaProperties(
-            false, clientType, getKafkaRestApiUriString(), restApiUsername, restApiPassword));
+    connectToKafka(new KafkaProperties(false, clientType));
     return injector.getInstance(KafkaBrokerApi.class);
   }
 
-  protected String getKafkaRestApiUriString() {
-    return null;
-  }
-
   private KafkaBrokerApi connectBroker() {
-    connectToKafka(
-        new KafkaProperties(
-            /*sendAsync*/ true,
-            clientType,
-            getKafkaRestApiUriString(),
-            restApiUsername,
-            restApiPassword));
+    connectToKafka(new KafkaProperties(/*sendAsync*/ true, clientType));
     return injector.getInstance(KafkaBrokerApi.class);
   }
 
