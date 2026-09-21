@@ -26,6 +26,30 @@
     {
       "unresolved": true,
       "key": {
+        "uuid": "42c92b1b_4f561d0f",
+        "filename": "/COMMIT_MSG",
+        "patchSetId": 18
+      },
+      "lineNbr": 13,
+      "author": {
+        "id": 1020677
+      },
+      "writtenOn": "2026-09-21T10:11:23Z",
+      "side": 1,
+      "message": "I believe this has been addressed?",
+      "parentUuid": "cce7b1cf_d888eeed",
+      "range": {
+        "startLine": 12,
+        "startChar": 0,
+        "endLine": 13,
+        "endChar": 28
+      },
+      "revId": "ab9baf72ec1a5f82fcc89b2ba2f581a2206ac040",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735"
+    },
+    {
+      "unresolved": true,
+      "key": {
         "uuid": "7f2ca080_5df243b3",
         "filename": "src/main/java/com/gerritforge/gerrit/plugins/kafka/session/KafkaSession.java",
         "patchSetId": 18
@@ -60,6 +84,30 @@
       "writtenOn": "2026-09-21T07:33:09Z",
       "side": 1,
       "message": "nit: you could consider refactoring this, using `assertThrows`, so thast we don\u0027t need the dummy dead code exception?\n\n```\n      assertThrows(\n          ExecutionException.class,\n          () -\u003e futureBoolean.get(\n              TEST_TIMEOUT_SEC, TimeUnit.SECONDS));\n```",
+      "range": {
+        "startLine": 283,
+        "startChar": 0,
+        "endLine": 285,
+        "endChar": 89
+      },
+      "revId": "ab9baf72ec1a5f82fcc89b2ba2f581a2206ac040",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "414769d4_624dd80f",
+        "filename": "src/test/java/com/gerritforge/gerrit/plugins/kafka/publish/KafkaSessionTest.java",
+        "patchSetId": 18
+      },
+      "lineNbr": 285,
+      "author": {
+        "id": 1020677
+      },
+      "writtenOn": "2026-09-21T10:11:23Z",
+      "side": 1,
+      "message": "I believe this has been addressed?",
+      "parentUuid": "43e4727c_27689fb3",
       "range": {
         "startLine": 283,
         "startChar": 0,
