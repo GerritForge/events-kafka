@@ -1,0 +1,50 @@
+{
+  "comments": [
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "3352e9a0_823eb8aa",
+        "filename": "/COMMIT_MSG",
+        "patchSetId": 20
+      },
+      "lineNbr": 11,
+      "author": {
+        "id": 1020677
+      },
+      "writtenOn": "2026-09-21T10:24:50Z",
+      "side": 1,
+      "message": "Worth mentioning that we\u0027ve also removed events-kafka\u0027s own implementation of the deserialiser and using events-broker instead?",
+      "range": {
+        "startLine": 8,
+        "startChar": 0,
+        "endLine": 11,
+        "endChar": 43
+      },
+      "revId": "65052c4bbf6b25e43949751e01d0acde6292f6a0",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "e57214fe_5fe647fc",
+        "filename": "src/main/java/com/gerritforge/gerrit/plugins/kafka/subscribe/KafkaEventNativeSubscriber.java",
+        "patchSetId": 20
+      },
+      "lineNbr": 257,
+      "author": {
+        "id": 1020677
+      },
+      "writtenOn": "2026-09-21T10:24:50Z",
+      "side": 1,
+      "message": "Why define these outside of the try? They\u0027re not use anywhere else?",
+      "range": {
+        "startLine": 256,
+        "startChar": 0,
+        "endLine": 257,
+        "endChar": 40
+      },
+      "revId": "65052c4bbf6b25e43949751e01d0acde6292f6a0",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735"
+    }
+  ]
+}
