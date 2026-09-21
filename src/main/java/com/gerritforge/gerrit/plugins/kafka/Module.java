@@ -16,40 +16,28 @@ import com.gerritforge.gerrit.plugins.kafka.config.KafkaProperties;
 import com.gerritforge.gerrit.plugins.kafka.config.KafkaProperties.ClientType;
 import com.gerritforge.gerrit.plugins.kafka.config.KafkaPublisherProperties;
 import com.gerritforge.gerrit.plugins.kafka.publish.KafkaPublisher;
-import com.gerritforge.gerrit.plugins.kafka.publish.KafkaRestProducer;
-import com.gerritforge.gerrit.plugins.kafka.rest.FutureExecutor;
-import com.gerritforge.gerrit.plugins.kafka.rest.HttpHostProxy;
-import com.gerritforge.gerrit.plugins.kafka.rest.HttpHostProxyProvider;
-import com.gerritforge.gerrit.plugins.kafka.rest.KafkaRestClient;
 import com.gerritforge.gerrit.plugins.kafka.session.KafkaProducerProvider;
 import com.google.gerrit.extensions.events.LifecycleListener;
 import com.google.gerrit.extensions.registration.DynamicSet;
 import com.google.gerrit.server.events.EventListener;
-import com.google.gerrit.server.git.WorkQueue;
 import com.google.inject.AbstractModule;
 import com.google.inject.Inject;
-import com.google.inject.Scopes;
 import com.google.inject.TypeLiteral;
-import com.google.inject.assistedinject.FactoryModuleBuilder;
-import java.util.concurrent.ExecutorService;
 import org.apache.kafka.clients.producer.Producer;
 
 class Module extends AbstractModule {
   private final KafkaApiModule kafkaBrokerModule;
   private final KafkaProperties kafkaConf;
-  private final WorkQueue workQueue;
   private final KafkaPublisherProperties configuration;
 
   @Inject
   public Module(
       KafkaApiModule kafkaBrokerModule,
       KafkaPublisherProperties configuration,
-      KafkaProperties kafkaConf,
-      WorkQueue workQueue) {
+      KafkaProperties kafkaConf) {
     this.kafkaBrokerModule = kafkaBrokerModule;
     this.configuration = configuration;
     this.kafkaConf = kafkaConf;
-    this.workQueue = workQueue;
   }
 
   @Override
@@ -65,16 +53,6 @@ class Module extends AbstractModule {
       case NATIVE:
         bind(new TypeLiteral<Producer<String, String>>() {})
             .toProvider(KafkaProducerProvider.class);
-        break;
-      case REST:
-        bind(ExecutorService.class)
-            .annotatedWith(FutureExecutor.class)
-            .toInstance(
-                workQueue.createQueue(
-                    kafkaConf.getRestApiThreads(), "KafkaRestClientThreadPool", true));
-        bind(HttpHostProxy.class).toProvider(HttpHostProxyProvider.class).in(Scopes.SINGLETON);
-        bind(new TypeLiteral<Producer<String, String>>() {}).to(KafkaRestProducer.class);
-        install(new FactoryModuleBuilder().build(KafkaRestClient.Factory.class));
         break;
       default:
         throw new IllegalArgumentException("Unsupported Kafka client type " + clientType);

@@ -43,21 +43,12 @@ public class KafkaSubscriberProperties extends KafkaProperties {
     this.autoCommitEnabled =
         Boolean.parseBoolean(
             getProperty(ConsumerConfig.ENABLE_AUTO_COMMIT_CONFIG, DEFAULT_ENABLE_AUTO_COMMIT));
-    failIfManualAckIsConfiguredWithRestClient();
   }
 
   @VisibleForTesting
   public KafkaSubscriberProperties(
       int pollingInterval, String groupId, int numberOfSubscribers, ClientType clientType) {
-    this(
-        pollingInterval,
-        groupId,
-        numberOfSubscribers,
-        clientType,
-        /* autoCommit */ true,
-        null,
-        null,
-        null);
+    this(pollingInterval, groupId, numberOfSubscribers, clientType, /* autoCommit */ true);
   }
 
   @VisibleForTesting
@@ -66,17 +57,13 @@ public class KafkaSubscriberProperties extends KafkaProperties {
       String groupId,
       int numberOfSubscribers,
       ClientType clientType,
-      boolean autoCommitEnabled,
-      String restApiUriString,
-      String restApiUsername,
-      String restApiPassword) {
-    super(true, clientType, restApiUriString, restApiUsername, restApiPassword);
+      boolean autoCommitEnabled) {
+    super(true, clientType);
     this.pollingInterval = pollingInterval;
     this.groupId = groupId;
     this.numberOfSubscribers = numberOfSubscribers;
     this.autoCommitEnabled = autoCommitEnabled;
     setProperty(ConsumerConfig.ENABLE_AUTO_COMMIT_CONFIG, Boolean.toString(autoCommitEnabled));
-    failIfManualAckIsConfiguredWithRestClient();
   }
 
   public Integer getPollingInterval() {
@@ -93,14 +80,5 @@ public class KafkaSubscriberProperties extends KafkaProperties {
 
   public boolean isAutoCommitEnabled() {
     return autoCommitEnabled;
-  }
-
-  private void failIfManualAckIsConfiguredWithRestClient() {
-    if (getClientType() == ClientType.REST && !autoCommitEnabled) {
-      throw new IllegalArgumentException(
-          "plugin.events-kafka.enableAutoCommit=false is not supported when clientType=REST; "
-              + "the REST consumer always acknowledges messages automatically. "
-              + "Use clientType=NATIVE for explicit acknowledgements.");
-    }
   }
 }

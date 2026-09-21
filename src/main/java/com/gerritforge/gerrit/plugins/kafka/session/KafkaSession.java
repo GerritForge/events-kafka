@@ -22,8 +22,6 @@ import com.google.common.util.concurrent.MoreExecutors;
 import com.google.common.util.concurrent.SettableFuture;
 import com.google.inject.Inject;
 import com.google.inject.Provider;
-import java.net.URI;
-import java.net.URISyntaxException;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
@@ -84,22 +82,6 @@ public final class KafkaSession {
          * ClassNotFoundExceptions
          */
         setConnectionClassLoader();
-        break;
-
-      case REST:
-        URI kafkaProxyUri;
-        try {
-          kafkaProxyUri = properties.getRestApiUri();
-        } catch (URISyntaxException e) {
-          LOGGER.error("Invalid Kafka Proxy URI: session not started", e);
-          return;
-        }
-        if (kafkaProxyUri == null) {
-          LOGGER.warn("No Kafka Proxy URL property defined: session not started.");
-          return;
-        }
-
-        LOGGER.info("Connect to {}...", kafkaProxyUri);
         break;
 
       default:
