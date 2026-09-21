@@ -27,7 +27,6 @@ import com.gerritforge.gerrit.eventbroker.EventsBrokerConfiguration;
 import com.gerritforge.gerrit.eventbroker.MessageAcknowledgement;
 import com.gerritforge.gerrit.eventbroker.log.MessageLogger;
 import com.gerritforge.gerrit.plugins.kafka.KafkaContainerProvider;
-import com.gerritforge.gerrit.plugins.kafka.KafkaRestContainer;
 import com.gerritforge.gerrit.plugins.kafka.config.KafkaProperties;
 import com.gerritforge.gerrit.plugins.kafka.config.KafkaProperties.ClientType;
 import com.gerritforge.gerrit.plugins.kafka.config.KafkaSubscriberProperties;
@@ -83,8 +82,6 @@ import org.testcontainers.containers.KafkaContainer;
 public class KafkaBrokerApiTest {
 
   static KafkaContainer kafka;
-  static KafkaRestContainer kafkaRest;
-  static KafkaRestContainer kafkaRestWithId;
   static GenericContainer<?> nginx;
   static String restApiUsername;
   static String restApiPassword;
@@ -274,10 +271,6 @@ public class KafkaBrokerApiTest {
   public static void beforeClass() throws Exception {
     kafka = KafkaContainerProvider.get();
     kafka.start();
-    kafkaRestWithId = new KafkaRestContainer(kafka, KAFKA_REST_ID, isAuthenticationProvided());
-    kafkaRestWithId.start();
-    kafkaRest = new KafkaRestContainer(kafka, isAuthenticationProvided());
-    kafkaRest.start();
 
     System.setProperty(ProducerConfig.BOOTSTRAP_SERVERS_CONFIG, kafka.getBootstrapServers());
   }
@@ -291,8 +284,6 @@ public class KafkaBrokerApiTest {
   @AfterClass
   public static void afterClass() {
     stopContainer(kafka);
-    stopContainer(kafkaRest);
-    stopContainer(kafkaRestWithId);
     stopContainer(nginx);
   }
 
