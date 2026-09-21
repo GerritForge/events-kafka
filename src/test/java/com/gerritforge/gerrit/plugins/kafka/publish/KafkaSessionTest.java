@@ -81,11 +81,14 @@ public class KafkaSessionTest {
 
   @Test
   public void shouldIncrementBrokerMetricCounterWhenMessagePublishedInSyncMode() throws Exception {
-    when(properties.isSendAsync()).thenReturn(false);
-    when(kafkaProducer.send(any())).thenReturn(Futures.immediateFuture(recordMetadata));
-    objectUnderTest.connect();
-    assertIsFutureTrue(publishAsync(message));
+    assertSendMessageSync(MessageLogger.Direction.PUBLISH);
     verify(publisherMetrics, only()).incrementBrokerPublishedMessage();
+  }
+
+  @Test
+  public void shouldIncrementBrokerMetricCounterWhenMessageRequeuedInSyncMode() throws Exception {
+    assertSendMessageSync(MessageLogger.Direction.REQUEUE);
+    verify(publisherMetrics, only()).incrementBrokerRequeuedMessage();
   }
 
   @Test
@@ -160,12 +163,23 @@ public class KafkaSessionTest {
   @Test
   public void shouldIncrementBrokerFailedMetricCounterWhenMessagePublishingFailedInSyncMode()
       throws Exception {
+    assertSendMessageSyncFailed(MessageLogger.Direction.PUBLISH);
+    verify(publisherMetrics, only()).incrementBrokerFailedToPublishMessage();
+  }
+
+  @Test
+  public void shouldIncrementBrokerFailedMetricCounterWhenMessageRequeueingFailedInSyncMode()
+      throws Exception {
+    assertSendMessageSyncFailed(MessageLogger.Direction.REQUEUE);
+    verify(publisherMetrics, only()).incrementBrokerFailedToRequeueMessage();
+  }
+
+  private void assertSendMessageSyncFailed(MessageLogger.Direction direction) throws Exception {
     when(properties.isSendAsync()).thenReturn(false);
     when(kafkaProducer.send(any()))
         .thenReturn(Futures.immediateFailedFuture(new Exception("failed")));
     objectUnderTest.connect();
-    var unused = assertIsFutureFailed(Exception.class, publishAsync(message));
-    verify(publisherMetrics, only()).incrementBrokerFailedToPublishMessage();
+    var unused = assertIsFutureFailed(Exception.class, sendAsync(message, direction));
   }
 
   @Test
@@ -263,6 +277,13 @@ public class KafkaSessionTest {
     when(properties.getProperty("bootstrap.servers")).thenReturn(null);
     objectUnderTest.connect();
     assertThat(objectUnderTest.isOpen()).isFalse();
+  }
+
+  private void assertSendMessageSync(MessageLogger.Direction direction) throws Exception {
+    when(properties.isSendAsync()).thenReturn(false);
+    when(kafkaProducer.send(any())).thenReturn(Futures.immediateFuture(recordMetadata));
+    objectUnderTest.connect();
+    assertIsFutureTrue(sendAsync(message, direction));
   }
 
   private void connectWithPartition() {
