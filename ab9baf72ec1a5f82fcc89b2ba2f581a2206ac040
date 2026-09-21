@@ -48,6 +48,30 @@
       "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735"
     },
     {
+      "unresolved": false,
+      "key": {
+        "uuid": "97d55633_91c0a42a",
+        "filename": "/COMMIT_MSG",
+        "patchSetId": 18
+      },
+      "lineNbr": 13,
+      "author": {
+        "id": 1000000
+      },
+      "writtenOn": "2026-09-21T10:30:25Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "cce7b1cf_d888eeed",
+      "range": {
+        "startLine": 12,
+        "startChar": 0,
+        "endLine": 13,
+        "endChar": 28
+      },
+      "revId": "ab9baf72ec1a5f82fcc89b2ba2f581a2206ac040",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735"
+    },
+    {
       "unresolved": true,
       "key": {
         "uuid": "7f2ca080_5df243b3",
@@ -61,6 +85,30 @@
       "writtenOn": "2026-09-21T07:33:09Z",
       "side": 1,
       "message": "Since we now have a `direction`, should we use it when incrementing the metric counter?\nIt would be useful to have an `incrementBrokerRequeuedMessage`.\n\nIf so, we could do this as a follow-up?",
+      "range": {
+        "startLine": 166,
+        "startChar": 0,
+        "endLine": 166,
+        "endChar": 57
+      },
+      "revId": "ab9baf72ec1a5f82fcc89b2ba2f581a2206ac040",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "6aadc11e_7e943156",
+        "filename": "src/main/java/com/gerritforge/gerrit/plugins/kafka/session/KafkaSession.java",
+        "patchSetId": 18
+      },
+      "lineNbr": 166,
+      "author": {
+        "id": 1000000
+      },
+      "writtenOn": "2026-09-21T10:30:25Z",
+      "side": 1,
+      "message": "Yes, it looks like a different change.",
+      "parentUuid": "7f2ca080_5df243b3",
       "range": {
         "startLine": 166,
         "startChar": 0,
@@ -107,6 +155,30 @@
       "writtenOn": "2026-09-21T10:11:23Z",
       "side": 1,
       "message": "I believe this has been addressed?",
+      "parentUuid": "43e4727c_27689fb3",
+      "range": {
+        "startLine": 283,
+        "startChar": 0,
+        "endLine": 285,
+        "endChar": 89
+      },
+      "revId": "ab9baf72ec1a5f82fcc89b2ba2f581a2206ac040",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "c5ec34f3_323a2b56",
+        "filename": "src/test/java/com/gerritforge/gerrit/plugins/kafka/publish/KafkaSessionTest.java",
+        "patchSetId": 18
+      },
+      "lineNbr": 285,
+      "author": {
+        "id": 1000000
+      },
+      "writtenOn": "2026-09-21T10:30:25Z",
+      "side": 1,
+      "message": "Done",
       "parentUuid": "43e4727c_27689fb3",
       "range": {
         "startLine": 283,
