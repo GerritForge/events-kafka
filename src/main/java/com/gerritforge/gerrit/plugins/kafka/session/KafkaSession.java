@@ -163,13 +163,13 @@ public final class KafkaSession {
                   topic, partition.orElse(null), "" + System.nanoTime(), messageBody));
       RecordMetadata metadata = future.get();
       LOGGER.debug("The offset of the record we just sent is: {}", metadata.offset());
-      publisherMetrics.incrementBrokerPublishedMessage();
+      incrementSendMetric(direction);
       resultF.set(true);
       messageListener.messageProcessed(direction, topic, messageBody);
       return resultF;
     } catch (Throwable e) {
       LOGGER.error("Cannot send the message", e);
-      publisherMetrics.incrementBrokerFailedToPublishMessage();
+      incrementFailedMetric(direction);
       messageListener.messageFailed(direction, topic, messageBody, e);
       return Futures.immediateFailedFuture(e);
     }
@@ -188,11 +188,11 @@ public final class KafkaSession {
               (metadata, e) -> {
                 if (metadata != null && e == null) {
                   LOGGER.debug("The offset of the record we just sent is: {}", metadata.offset());
-                  publisherMetrics.incrementBrokerPublishedMessage();
+                  incrementSendMetric(direction);
                   messageListener.messageProcessed(direction, topic, messageBody);
                 } else {
                   LOGGER.error("Cannot send the message", e);
-                  publisherMetrics.incrementBrokerFailedToPublishMessage();
+                  incrementFailedMetric(direction);
                   messageListener.messageFailed(direction, topic, messageBody, e);
                 }
               });
@@ -206,6 +206,28 @@ public final class KafkaSession {
       LOGGER.error("Cannot send the message", e);
       publisherMetrics.incrementBrokerFailedToPublishMessage();
       return Futures.immediateFailedFuture(e);
+    }
+  }
+
+  private void incrementSendMetric(MessageLogger.Direction direction) {
+    switch (direction) {
+      case PUBLISH:
+        publisherMetrics.incrementBrokerPublishedMessage();
+        break;
+      case REQUEUE:
+        publisherMetrics.incrementBrokerRequeuedMessage();
+        break;
+    }
+  }
+
+  private void incrementFailedMetric(MessageLogger.Direction direction) {
+    switch (direction) {
+      case PUBLISH:
+        publisherMetrics.incrementBrokerFailedToPublishMessage();
+        break;
+      case REQUEUE:
+        publisherMetrics.incrementBrokerFailedToRequeueMessage();
+        break;
     }
   }
 
