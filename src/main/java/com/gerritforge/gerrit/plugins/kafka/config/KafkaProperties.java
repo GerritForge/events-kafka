@@ -14,35 +14,18 @@ package com.gerritforge.gerrit.plugins.kafka.config;
 import com.google.common.annotations.VisibleForTesting;
 import com.google.common.base.CaseFormat;
 import com.google.common.base.Strings;
-import com.google.gerrit.common.Nullable;
 import com.google.gerrit.extensions.annotations.PluginName;
-import com.google.gerrit.server.config.ConfigUtil;
 import com.google.gerrit.server.config.PluginConfig;
 import com.google.gerrit.server.config.PluginConfigFactory;
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
-import java.net.URI;
-import java.net.URISyntaxException;
-import java.time.Duration;
 import java.util.UUID;
-import java.util.concurrent.TimeUnit;
 import org.apache.kafka.clients.consumer.ConsumerConfig;
 import org.apache.kafka.clients.producer.ProducerConfig;
 import org.apache.kafka.common.serialization.StringSerializer;
 
 @Singleton
 public class KafkaProperties extends java.util.Properties {
-  public static final String REST_API_URI_ID_PLACEHOLDER = "${kafka_rest_id}";
-
-  private static final String PROPERTY_HTTP_WIRE_LOG = "httpWireLog";
-  private static final boolean DEFAULT_HTTP_WIRE_LOG = false;
-  private static final String PROPERTY_REST_API_URI = "restApiUri";
-  private static final String PROPERTY_REST_API_USERNAME = "restApiUsername";
-  private static final String PROPERTY_REST_API_PASSWORD = "restApiPassword";
-  private static final String PROPERTY_REST_API_TIMEOUT = "restApiTimeout";
-  private static final Duration DEFAULT_REST_API_TIMEOUT = Duration.ofSeconds(60);
-  private static final String PROPERTY_REST_API_THREADS = "restApiThreads";
-  private static final int DEFAULT_REST_API_THREADS = 10;
   private static final String PROPERTY_CLIENT_TYPE = "clientType";
   private static final ClientType DEFAULT_CLIENT_TYPE = ClientType.NATIVE;
   private static final String PROPERTY_SEND_ASYNC = "sendAsync";
@@ -63,19 +46,13 @@ public class KafkaProperties extends java.util.Properties {
 
   public enum ClientType {
     NATIVE,
-    REST;
+    REST // Unsupported
   }
 
   private final String topic;
   private final boolean sendAsync;
   private final boolean sendStreamEvents;
   private final ClientType clientType;
-  private final String restApiUriString;
-  private final String restApiUsername;
-  private final String restApiPassword;
-  private final boolean httpWireLog;
-  private final Duration restApiTimeout;
-  private final int restApiThreads;
 
   @Inject
   public KafkaProperties(PluginConfigFactory configFactory, @PluginName String pluginName) {
@@ -90,64 +67,19 @@ public class KafkaProperties extends java.util.Properties {
     sendAsync = fromGerritConfig.getBoolean(PROPERTY_SEND_ASYNC, DEFAULT_SEND_ASYNC);
     clientType = fromGerritConfig.getEnum(PROPERTY_CLIENT_TYPE, DEFAULT_CLIENT_TYPE);
 
-    switch (clientType) {
-      case REST:
-        restApiUriString = fromGerritConfig.getString(PROPERTY_REST_API_URI);
-        if (Strings.isNullOrEmpty(restApiUriString)) {
-          throw new IllegalArgumentException("Missing REST API URI in Kafka properties");
-        }
-
-        restApiUsername = fromGerritConfig.getString(PROPERTY_REST_API_USERNAME);
-        restApiPassword = fromGerritConfig.getString(PROPERTY_REST_API_PASSWORD);
-        if (!Strings.isNullOrEmpty(restApiUsername) && Strings.isNullOrEmpty(restApiPassword)) {
-          throw new IllegalArgumentException("Missing REST API password in kafka properties");
-        }
-
-        httpWireLog = fromGerritConfig.getBoolean(PROPERTY_HTTP_WIRE_LOG, DEFAULT_HTTP_WIRE_LOG);
-        restApiTimeout =
-            Duration.ofMillis(
-                ConfigUtil.getTimeUnit(
-                    fromGerritConfig.getString(PROPERTY_REST_API_TIMEOUT),
-                    DEFAULT_REST_API_TIMEOUT.toMillis(),
-                    TimeUnit.MILLISECONDS));
-        restApiThreads =
-            fromGerritConfig.getInt(PROPERTY_REST_API_THREADS, DEFAULT_REST_API_THREADS);
-        break;
-      case NATIVE:
-      default:
-        restApiUriString = null;
-        restApiUsername = null;
-        restApiPassword = null;
-        httpWireLog = false;
-        restApiTimeout = null;
-        restApiThreads = 0;
-        break;
-    }
-
     applyConfig(fromGerritConfig);
     initDockerizedKafkaServer();
   }
 
   @VisibleForTesting
-  public KafkaProperties(
-      boolean sendAsync,
-      ClientType clientType,
-      @Nullable String restApiUriString,
-      @Nullable String restApiUsername,
-      @Nullable String restApiPassword) {
+  public KafkaProperties(boolean sendAsync, ClientType clientType) {
     super();
     setDefaults();
     topic = DEFAULT_STREAM_EVENTS_TOPIC_NAME;
     this.sendAsync = sendAsync;
     this.sendStreamEvents = true;
     this.clientType = clientType;
-    this.restApiUriString = restApiUriString;
     initDockerizedKafkaServer();
-    this.httpWireLog = false;
-    restApiTimeout = DEFAULT_REST_API_TIMEOUT;
-    restApiThreads = DEFAULT_REST_API_THREADS;
-    this.restApiUsername = restApiUsername;
-    this.restApiPassword = restApiPassword;
   }
 
   private void setDefaults() {
@@ -200,33 +132,5 @@ public class KafkaProperties extends java.util.Properties {
 
   public ClientType getClientType() {
     return clientType;
-  }
-
-  public URI getRestApiUri() throws URISyntaxException {
-    return getRestApiUri("");
-  }
-
-  public String getRestApiUsername() {
-    return restApiUsername;
-  }
-
-  public String getRestApiPassword() {
-    return restApiPassword;
-  }
-
-  public URI getRestApiUri(String kafkaRestId) throws URISyntaxException {
-    return new URI(restApiUriString.replace(REST_API_URI_ID_PLACEHOLDER, kafkaRestId));
-  }
-
-  public boolean isHttpWireLog() {
-    return httpWireLog;
-  }
-
-  public Duration getRestApiTimeout() {
-    return restApiTimeout;
-  }
-
-  public int getRestApiThreads() {
-    return restApiThreads;
   }
 }

@@ -18,7 +18,6 @@ import com.gerritforge.gerrit.plugins.kafka.broker.ConsumerExecutor;
 import com.gerritforge.gerrit.plugins.kafka.config.KafkaProperties.ClientType;
 import com.gerritforge.gerrit.plugins.kafka.config.KafkaSubscriberProperties;
 import com.gerritforge.gerrit.plugins.kafka.subscribe.KafkaEventNativeSubscriber;
-import com.gerritforge.gerrit.plugins.kafka.subscribe.KafkaEventRestSubscriber;
 import com.gerritforge.gerrit.plugins.kafka.subscribe.KafkaEventSubscriber;
 import com.google.common.collect.Sets;
 import com.google.gerrit.extensions.registration.DynamicItem;
@@ -65,12 +64,6 @@ public class KafkaApiModule extends LifecycleModule {
         install(
             new FactoryModuleBuilder()
                 .implement(KafkaEventSubscriber.class, KafkaEventNativeSubscriber.class)
-                .build(KafkaEventSubscriber.Factory.class));
-        break;
-      case REST:
-        install(
-            new FactoryModuleBuilder()
-                .implement(KafkaEventSubscriber.class, KafkaEventRestSubscriber.class)
                 .build(KafkaEventSubscriber.Factory.class));
         break;
       default:
