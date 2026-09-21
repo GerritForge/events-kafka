@@ -22,8 +22,13 @@ import com.google.inject.Singleton;
 public class KafkaEventsPublisherMetrics extends KafkaEventsMetrics {
   private static final String PUBLISHER_SUCCESS_COUNTER = "broker_msg_publisher_success_counter";
   private static final String PUBLISHER_FAILURE_COUNTER = "broker_msg_publisher_failure_counter";
+  private static final String PUBLISHER_REQUEUE_COUNTER = "broker_msg_requeue_success_counter";
+  private static final String PUBLISHER_REQUEUE_FAILURE_COUNTER =
+      "broker_msg_requeue_failure_counter";
 
   private final Counter1<String> brokerPublisherSuccessCounter;
+  private final Counter1<String> brokerRequeueSuccessCounter;
+  private final Counter1<String> brokerRequeueFailureCounter;
   private final Counter1<String> brokerPublisherFailureCounter;
 
   @Inject
@@ -43,6 +48,20 @@ public class KafkaEventsPublisherMetrics extends KafkaEventsMetrics {
                 .setRate()
                 .setUnit("errors"),
             stringField(PUBLISHER_FAILURE_COUNTER, "Broker failed to publish message count"));
+    this.brokerRequeueSuccessCounter =
+        metricMaker.newCounter(
+            "kafka/broker/broker_message_requeue_counter",
+            new Description("Number of successfully requeued messages by the broker publisher")
+                .setRate()
+                .setUnit("messages"),
+            stringField(PUBLISHER_REQUEUE_COUNTER, "Broker message requeue count"));
+    this.brokerRequeueFailureCounter =
+        metricMaker.newCounter(
+            "kafka/broker/broker_message_requeue_failure_counter",
+            new Description("Number of messages failed to requeue by the broker publisher")
+                .setRate()
+                .setUnit("messages"),
+            stringField(PUBLISHER_REQUEUE_FAILURE_COUNTER, "Broker failed to requeue message count"));
   }
 
   public void incrementBrokerPublishedMessage() {
@@ -51,5 +70,13 @@ public class KafkaEventsPublisherMetrics extends KafkaEventsMetrics {
 
   public void incrementBrokerFailedToPublishMessage() {
     brokerPublisherFailureCounter.increment(PUBLISHER_FAILURE_COUNTER);
+  }
+
+  public void incrementBrokerRequeuedMessage() {
+    brokerRequeueSuccessCounter.increment(PUBLISHER_REQUEUE_COUNTER);
+  }
+
+  public void incrementBrokerFailedToRequeueMessage() {
+    brokerRequeueFailureCounter.increment(PUBLISHER_REQUEUE_FAILURE_COUNTER);
   }
 }
