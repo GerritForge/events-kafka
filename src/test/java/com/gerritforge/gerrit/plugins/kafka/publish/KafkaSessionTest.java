@@ -81,11 +81,14 @@ public class KafkaSessionTest {
 
   @Test
   public void shouldIncrementBrokerMetricCounterWhenMessagePublishedInSyncMode() throws Exception {
-    when(properties.isSendAsync()).thenReturn(false);
-    when(kafkaProducer.send(any())).thenReturn(Futures.immediateFuture(recordMetadata));
-    objectUnderTest.connect();
-    assertIsFutureTrue(publishAsync(message));
+    assertSendMessageSync(MessageLogger.Direction.PUBLISH);
     verify(publisherMetrics, only()).incrementBrokerPublishedMessage();
+  }
+
+  @Test
+  public void shouldIncrementBrokerMetricCounterWhenMessageRequeuedInSyncMode() throws Exception {
+    assertSendMessageSync(MessageLogger.Direction.REQUEUE);
+    verify(publisherMetrics, only()).incrementBrokerRequeuedMessage();
   }
 
   @Test
@@ -160,12 +163,23 @@ public class KafkaSessionTest {
   @Test
   public void shouldIncrementBrokerFailedMetricCounterWhenMessagePublishingFailedInSyncMode()
       throws Exception {
+    assertSendMessageSyncFailed(MessageLogger.Direction.PUBLISH);
+    verify(publisherMetrics, only()).incrementBrokerFailedToPublishMessage();
+  }
+
+  @Test
+  public void shouldIncrementBrokerFailedMetricCounterWhenMessageRequeueingFailedInSyncMode()
+      throws Exception {
+    assertSendMessageSyncFailed(MessageLogger.Direction.REQUEUE);
+    verify(publisherMetrics, only()).incrementBrokerFailedToRequeueMessage();
+  }
+
+  private void assertSendMessageSyncFailed(MessageLogger.Direction direction) throws Exception {
     when(properties.isSendAsync()).thenReturn(false);
     when(kafkaProducer.send(any()))
         .thenReturn(Futures.immediateFailedFuture(new Exception("failed")));
     objectUnderTest.connect();
-    var unused = assertIsFutureFailed(Exception.class, publishAsync(message));
-    verify(publisherMetrics, only()).incrementBrokerFailedToPublishMessage();
+    var unused = assertIsFutureFailed(Exception.class, sendAsync(message, direction));
   }
 
   @Test
@@ -182,18 +196,16 @@ public class KafkaSessionTest {
 
   @Test
   public void shouldIncrementBrokerMetricCounterWhenMessagePublishedInAsyncMode() throws Exception {
-    when(properties.isSendAsync()).thenReturn(true);
-    when(kafkaProducer.send(any(), any())).thenReturn(Futures.immediateFuture(recordMetadata));
-
-    objectUnderTest.connect();
-    ListenableFuture<Boolean> publishFuture = publishAsync(message);
-
-    verify(kafkaProducer).send(any(), callbackCaptor.capture());
-    callbackCaptor.getValue().onCompletion(recordMetadata, null);
-
-    assertIsFutureTrue(publishFuture);
+    assertSendMessageAsync(MessageLogger.Direction.PUBLISH);
 
     verify(publisherMetrics, only()).incrementBrokerPublishedMessage();
+  }
+
+  @Test
+  public void shouldIncrementBrokerMetricCounterWhenMessageRequeuedInAsyncMode() throws Exception {
+    assertSendMessageAsync(MessageLogger.Direction.REQUEUE);
+
+    verify(publisherMetrics, only()).incrementBrokerRequeuedMessage();
   }
 
   @Test
@@ -231,18 +243,15 @@ public class KafkaSessionTest {
   @Test
   public void shouldIncrementBrokerFailedMetricCounterWhenMessagePublishingFailedInAsyncMode()
       throws Exception {
-    when(properties.isSendAsync()).thenReturn(true);
-    var failedMessage = "failed";
-    when(kafkaProducer.send(any(), any()))
-        .thenReturn(Futures.immediateFailedFuture(new Exception(failedMessage)));
-
-    objectUnderTest.connect();
-    assertThat(assertIsFutureFailed(Exception.class, publishAsync(message)).getMessage())
-        .isEqualTo(failedMessage);
-
-    verify(kafkaProducer).send(any(), callbackCaptor.capture());
-    callbackCaptor.getValue().onCompletion(null, new Exception());
+    assertSendMessageFailedAsync(MessageLogger.Direction.PUBLISH);
     verify(publisherMetrics, only()).incrementBrokerFailedToPublishMessage();
+  }
+
+  @Test
+  public void shouldIncrementBrokerFailedMetricCounterWhenMessageRequeueingFailedInAsyncMode()
+      throws Exception {
+    assertSendMessageFailedAsync(MessageLogger.Direction.REQUEUE);
+    verify(publisherMetrics, only()).incrementBrokerFailedToRequeueMessage();
   }
 
   @Test
@@ -263,6 +272,40 @@ public class KafkaSessionTest {
     when(properties.getProperty("bootstrap.servers")).thenReturn(null);
     objectUnderTest.connect();
     assertThat(objectUnderTest.isOpen()).isFalse();
+  }
+
+  private void assertSendMessageFailedAsync(MessageLogger.Direction direction) throws Exception {
+    when(properties.isSendAsync()).thenReturn(true);
+    var failedMessage = "failed";
+    when(kafkaProducer.send(any(), any()))
+        .thenReturn(Futures.immediateFailedFuture(new Exception(failedMessage)));
+
+    objectUnderTest.connect();
+    assertThat(assertIsFutureFailed(Exception.class, sendAsync(message, direction)).getMessage())
+        .isEqualTo(failedMessage);
+
+    verify(kafkaProducer).send(any(), callbackCaptor.capture());
+    callbackCaptor.getValue().onCompletion(null, new Exception());
+  }
+
+  private void assertSendMessageSync(MessageLogger.Direction direction) throws Exception {
+    when(properties.isSendAsync()).thenReturn(false);
+    when(kafkaProducer.send(any())).thenReturn(Futures.immediateFuture(recordMetadata));
+    objectUnderTest.connect();
+    assertIsFutureTrue(sendAsync(message, direction));
+  }
+
+  private void assertSendMessageAsync(MessageLogger.Direction direction) throws Exception {
+    when(properties.isSendAsync()).thenReturn(true);
+    when(kafkaProducer.send(any(), any())).thenReturn(Futures.immediateFuture(recordMetadata));
+
+    objectUnderTest.connect();
+    ListenableFuture<Boolean> publishFuture = sendAsync(message, direction);
+
+    verify(kafkaProducer).send(any(), callbackCaptor.capture());
+    callbackCaptor.getValue().onCompletion(recordMetadata, null);
+
+    assertIsFutureTrue(publishFuture);
   }
 
   private void connectWithPartition() {
