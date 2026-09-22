@@ -1,0 +1,21 @@
+{
+  "comments": [
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "b1783c6a_219230ac",
+        "filename": "/COMMIT_MSG",
+        "patchSetId": 5
+      },
+      "lineNbr": 8,
+      "author": {
+        "id": 1012541
+      },
+      "writtenOn": "2026-09-22T07:30:28Z",
+      "side": 1,
+      "message": "Can you expand on why we are removing it?",
+      "revId": "07c992a4e681bdee47e2e2371a8c1028f55669ed",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735"
+    }
+  ]
+}
