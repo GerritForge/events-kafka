@@ -1,0 +1,61 @@
+{
+  "comments": [
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "c006efbf_33f2ab44",
+        "filename": "/COMMIT_MSG",
+        "patchSetId": 29
+      },
+      "lineNbr": 12,
+      "author": {
+        "id": 1012541
+      },
+      "writtenOn": "2026-09-22T07:29:47Z",
+      "side": 1,
+      "message": "I think we should also add we are now handling tombstone events.",
+      "revId": "9d2f5f4aeb1010df0e962d36189faf15c3261efa",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "e2d7197c_cfe1c380",
+        "filename": "src/main/java/com/gerritforge/gerrit/plugins/kafka/subscribe/KafkaEventNativeSubscriber.java",
+        "patchSetId": 29
+      },
+      "lineNbr": 260,
+      "author": {
+        "id": 1012541
+      },
+      "writtenOn": "2026-09-22T07:29:47Z",
+      "side": 1,
+      "message": "If manual commit is enabled this will never be committed.\nIt should probably be handled later in the \"acking logic\".",
+      "range": {
+        "startLine": 260,
+        "startChar": 18,
+        "endLine": 260,
+        "endChar": 24
+      },
+      "revId": "9d2f5f4aeb1010df0e962d36189faf15c3261efa",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "10398f89_29db1d83",
+        "filename": "src/main/java/com/gerritforge/gerrit/plugins/kafka/subscribe/KafkaEventRestSubscriber.java",
+        "patchSetId": 29
+      },
+      "lineNbr": 229,
+      "author": {
+        "id": 1012541
+      },
+      "writtenOn": "2026-09-22T07:29:47Z",
+      "side": 1,
+      "message": "We are not handling tombstones as in the native subscriber.",
+      "revId": "9d2f5f4aeb1010df0e962d36189faf15c3261efa",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735"
+    }
+  ]
+}
