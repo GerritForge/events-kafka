@@ -57,6 +57,30 @@
       },
       "revId": "c522881692c0a721e756fa9a70a949e51a7c1ade",
       "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "a2d07157_01c5aea3",
+        "filename": "src/main/java/com/gerritforge/gerrit/plugins/kafka/publish/KafkaEventsPublisherMetrics.java",
+        "patchSetId": 11
+      },
+      "lineNbr": 56,
+      "author": {
+        "id": 1000000
+      },
+      "writtenOn": "2026-09-22T11:42:19Z",
+      "side": 1,
+      "message": "Good point, but it should be done as a separate change for refactoring all metrics.",
+      "parentUuid": "0cccd099_e29236d5",
+      "range": {
+        "startLine": 56,
+        "startChar": 12,
+        "endLine": 56,
+        "endChar": 82
+      },
+      "revId": "c522881692c0a721e756fa9a70a949e51a7c1ade",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735"
     }
   ]
 }
