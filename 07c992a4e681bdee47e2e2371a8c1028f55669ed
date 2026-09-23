@@ -16,6 +16,24 @@
       "message": "Can you expand on why we are removing it?",
       "revId": "07c992a4e681bdee47e2e2371a8c1028f55669ed",
       "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "58759e80_6eb57beb",
+        "filename": "/COMMIT_MSG",
+        "patchSetId": 5
+      },
+      "lineNbr": 8,
+      "author": {
+        "id": 1000000
+      },
+      "writtenOn": "2026-09-23T16:32:09Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "b1783c6a_219230ac",
+      "revId": "07c992a4e681bdee47e2e2371a8c1028f55669ed",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735"
     }
   ]
 }
