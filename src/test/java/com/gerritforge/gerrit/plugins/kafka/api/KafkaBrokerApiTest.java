@@ -11,6 +11,7 @@
 
 package com.gerritforge.gerrit.plugins.kafka.api;
 
+import static com.gerritforge.gerrit.eventbroker.EventsBrokerConfiguration.ALL_EVENTS_PARTITION;
 import static com.gerritforge.gerrit.eventbroker.TopicSubscriber.topicSubscriber;
 import static com.gerritforge.gerrit.eventbroker.TopicSubscriberWithGroupId.topicSubscriberWithGroupId;
 import static com.google.common.truth.Truth.assertThat;
@@ -37,6 +38,7 @@ import com.google.gerrit.server.events.Event;
 import com.google.gerrit.server.events.EventGson;
 import com.google.gerrit.server.events.EventGsonProvider;
 import com.google.gerrit.server.events.ProjectCreatedEvent;
+import com.google.gerrit.server.events.RefUpdatedEvent;
 import com.google.gerrit.server.git.WorkQueue;
 import com.google.gerrit.server.plugincontext.PluginContext;
 import com.google.gerrit.server.plugincontext.PluginMapContext;
@@ -52,6 +54,7 @@ import com.google.inject.Singleton;
 import com.google.inject.TypeLiteral;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.ExecutionException;
@@ -59,10 +62,12 @@ import java.util.concurrent.TimeUnit;
 import java.util.function.Function;
 import org.apache.kafka.clients.admin.Admin;
 import org.apache.kafka.clients.admin.NewTopic;
+import org.apache.kafka.clients.admin.OffsetSpec;
 import org.apache.kafka.clients.producer.KafkaProducer;
 import org.apache.kafka.clients.producer.Producer;
 import org.apache.kafka.clients.producer.ProducerConfig;
 import org.apache.kafka.clients.producer.ProducerRecord;
+import org.apache.kafka.common.TopicPartition;
 import org.junit.After;
 import org.junit.AfterClass;
 import org.junit.Before;
@@ -92,6 +97,7 @@ public class KafkaBrokerApiTest {
   private static final int TEST_TIMEOUT = 30;
   private static final int TEST_WAIT_FOR_MORE_MESSAGES_TIMEOUT = 5;
   private static final int ONE_MESSAGE_EXPECTED = 1;
+  private static final int TWO_MESSAGES_EXPECTED = 2;
   private static final String PARTITION_PROJECT_0 = "project-0";
   private static final String PARTITION_PROJECT_1 = "project-1";
   private static final String GROUP_ID = "group_id";
@@ -500,6 +506,42 @@ public class KafkaBrokerApiTest {
         .isEqualTo(gson.toJson(projectCreatedEvent));
 
     assertNoMoreExpectedMessages(testConsumer);
+  }
+
+  @Test
+  public void shouldPublishAllEventTypesToPartitionZero() throws Exception {
+    KafkaBrokerApi kafkaBrokerApi = connectBroker();
+    String testTopic = createTopicWithPartitions(2);
+    configurePartitions(testTopic, ALL_EVENTS_PARTITION);
+    configurePartitionEventProperty(testTopic, "type");
+    when(injector
+            .getInstance(EventsBrokerConfiguration.class)
+            .isAllEventsInSinglePartition(testTopic))
+        .thenReturn(true);
+    Event projectCreatedEvent = projectCreatedEvent(PARTITION_PROJECT_0);
+    Event refUpdatedEvent = new RefUpdatedEvent();
+
+    TestConsumer testConsumer = new TestConsumer(TWO_MESSAGES_EXPECTED);
+    kafkaBrokerApi.receiveAsyncWithPartition(
+        testTopic, ALL_EVENTS_PARTITION, GROUP_ID, testConsumer);
+    assertThat(kafkaBrokerApi.send(testTopic, projectCreatedEvent).get()).isTrue();
+    assertThat(kafkaBrokerApi.send(testTopic, refUpdatedEvent).get()).isTrue();
+
+    assertThat(testConsumer.await()).isTrue();
+    assertThat(testConsumer.messages.stream().map(event -> event.type).toList())
+        .containsExactly(projectCreatedEvent.type, refUpdatedEvent.type)
+        .inOrder();
+
+    TopicPartition unusedPartition = new TopicPartition(testTopic, 1);
+    try (Admin admin = Admin.create(injector.getInstance(KafkaProperties.class))) {
+      assertThat(
+              admin
+                  .listOffsets(Map.of(unusedPartition, OffsetSpec.latest()))
+                  .partitionResult(unusedPartition)
+                  .get()
+                  .offset())
+          .isEqualTo(0);
+    }
   }
 
   @Test
