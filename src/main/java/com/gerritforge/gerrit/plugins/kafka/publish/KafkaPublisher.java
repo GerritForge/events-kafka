@@ -11,6 +11,8 @@
 
 package com.gerritforge.gerrit.plugins.kafka.publish;
 
+import static com.gerritforge.gerrit.eventbroker.EventsBrokerConfiguration.ALL_EVENTS_PARTITION;
+
 import com.gerritforge.gerrit.eventbroker.BrokerApiMessageListener;
 import com.gerritforge.gerrit.eventbroker.EventsBrokerConfiguration;
 import com.gerritforge.gerrit.eventbroker.log.MessageLogger;
@@ -79,6 +81,9 @@ public class KafkaPublisher implements EventListener {
     List<String> partitions = eventsBrokerConfiguration.getPartitionsForTopic(topic);
     if (partitions.isEmpty()) {
       return Optional.empty();
+    }
+    if (partitions.contains(ALL_EVENTS_PARTITION)) {
+      return Optional.of(0);
     }
 
     String property =
