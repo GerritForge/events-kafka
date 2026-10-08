@@ -85,6 +85,11 @@ Additional properties
 :   Whether to send stream events to the `topic` topic.
     Default: false
 
+Logical partitions
+------------------
+
+See the [events-broker partition configuration](https://gerrit.googlesource.com/modules/events-broker/+/refs/heads/master/README.md#partition_aware-topics).
+
 Gerrit init integration
 -----------------------
 

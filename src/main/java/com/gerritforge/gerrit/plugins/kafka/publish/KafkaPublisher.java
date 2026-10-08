@@ -80,6 +80,9 @@ public class KafkaPublisher implements EventListener {
     if (partitions.isEmpty()) {
       return Optional.empty();
     }
+    if (eventsBrokerConfiguration.isAllEventsInSinglePartition(topic)) {
+      return Optional.of(0);
+    }
 
     String property =
         eventsBrokerConfiguration
