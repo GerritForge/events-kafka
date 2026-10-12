@@ -22,6 +22,30 @@
       },
       "revId": "c1dc63255cff17749f0e50e32ca2f74acd812f6d",
       "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "9a982f38_27263760",
+        "filename": "src/test/java/com/gerritforge/gerrit/plugins/kafka/api/KafkaBrokerApiTest.java",
+        "patchSetId": 1
+      },
+      "lineNbr": 513,
+      "author": {
+        "id": 1015244
+      },
+      "writtenOn": "2026-10-12T13:06:07Z",
+      "side": 1,
+      "message": "Yes, good point.\nI think it should be removed from the codebase, since `native` is the only client supported.\nBut I agree we don\u0027t need to be defensive here.",
+      "parentUuid": "f004130c_bc356ac3",
+      "range": {
+        "startLine": 513,
+        "startChar": 3,
+        "endLine": 513,
+        "endChar": 48
+      },
+      "revId": "c1dc63255cff17749f0e50e32ca2f74acd812f6d",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735"
     }
   ]
 }
