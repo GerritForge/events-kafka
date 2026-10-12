@@ -26,6 +26,8 @@ import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
 import org.apache.kafka.clients.producer.Producer;
 import org.apache.kafka.clients.producer.ProducerRecord;
@@ -37,6 +39,8 @@ import org.slf4j.LoggerFactory;
 public final class KafkaSession {
 
   private static final Logger LOGGER = LoggerFactory.getLogger(KafkaSession.class);
+  private static final ExecutorService KAFKA_ASYNC_POOL =
+      Executors.newFixedThreadPool(Math.max(2, Runtime.getRuntime().availableProcessors() / 16));
   private final KafkaProperties properties;
   private final Provider<Producer<String, String>> producerProvider;
   private final KafkaEventsPublisherMetrics publisherMetrics;
@@ -181,7 +185,7 @@ public final class KafkaSession {
 
       // The transformation is lightweight, so we can afford using a directExecutor
       return Futures.transform(
-          JdkFutureAdapters.listenInPoolThread(future),
+          JdkFutureAdapters.listenInPoolThread(future, KAFKA_ASYNC_POOL),
           Objects::nonNull,
           MoreExecutors.directExecutor());
     } catch (Throwable e) {

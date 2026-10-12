@@ -58,7 +58,7 @@ public class KafkaProperties extends java.util.Properties {
   public KafkaProperties(PluginConfigFactory configFactory, @PluginName String pluginName) {
     super();
     setDefaults();
-    PluginConfig fromGerritConfig = configFactory.getFromGerritConfig(pluginName);
+    PluginConfig fromGerritConfig = configFactory.getFromGerritConfig(pluginName, true);
     sendStreamEvents =
         fromGerritConfig.getBoolean(SEND_STREAM_EVENTS_FIELD, SEND_STREAM_EVENTS_DEFAULT);
     topic =
