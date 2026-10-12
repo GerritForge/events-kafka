@@ -62,6 +62,7 @@ public class KafkaEventRestSubscriber implements KafkaEventSubscriber {
   private static final int DELAY_RECONNECT_AFTER_FAILURE_MSEC = 1000;
   // Prefix is a length of 'rest-consumer-' string
   private static final int INSTANCE_ID_PREFIX_LEN = 14;
+
   /**
    * Suffix is a length of a unique identifier for example: '-9836fe85-d838-4722-97c9-4a7b-34e834d'
    */

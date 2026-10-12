@@ -156,7 +156,8 @@ public class KafkaRestClient {
     post.setConfig(createRequestConfig());
     post.setEntity(
         new StringEntity(
-            "{\"format\": \"json\",\"auto.offset.reset\": \"earliest\", \"auto.commit.enable\":\"true\", \"consumer.request.timeout.ms\": \"1000\"}",
+            "{\"format\": \"json\",\"auto.offset.reset\": \"earliest\","
+                + " \"auto.commit.enable\":\"true\", \"consumer.request.timeout.ms\": \"1000\"}",
             ContentType.create(KAFKA_V2, UTF_8)));
     return post;
   }
