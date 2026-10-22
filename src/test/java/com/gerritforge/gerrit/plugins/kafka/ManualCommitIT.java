@@ -12,6 +12,7 @@
 package com.gerritforge.gerrit.plugins.kafka;
 
 import static com.google.common.truth.Truth.assertThat;
+import static org.junit.Assert.assertThrows;
 
 import com.gerritforge.gerrit.eventbroker.BrokerApi;
 import com.gerritforge.gerrit.eventbroker.BrokerApiModule;
@@ -25,6 +26,7 @@ import com.google.gerrit.acceptance.TestPlugin;
 import com.google.gerrit.acceptance.config.GerritConfig;
 import com.google.gerrit.server.events.Event;
 import com.google.gerrit.server.events.EventGsonProvider;
+import com.google.gerrit.server.events.EventTypes;
 import com.google.gerrit.server.events.ProjectCreatedEvent;
 import com.google.gson.Gson;
 import com.google.inject.Module;
@@ -112,12 +114,29 @@ public class ManualCommitIT extends LightweightPluginDaemonTest {
 
   @Test
   @GerritConfig(name = "plugin.events-kafka.enableAutoCommit", value = "false")
-  public void shouldRemovePreviousRecordsFromSamePartitionWhenAckIsCalled() throws Exception {
-    String topic = "manual_commit_ack_removes_previous_records_topic";
+  public void shouldRejectAckForEqualEventCopy() throws InterruptedException {
+    String topic = "should_reject_ack_for_equal_event_copy";
+    Event event = new TestEvent();
+    EventTypes.register(event.getType(), TestEvent.class);
+
+    consumeOneMessage(
+        event,
+        topic,
+        (deliveredEvent, acknowledgement) -> {
+          Event eventCopy = new TestEvent();
+          assertThat(eventCopy).isEqualTo(deliveredEvent);
+          assertThrows(MessageAcknowledgementException.class, () -> acknowledgement.ack(eventCopy));
+        });
+
+    assertThat(getCommittedOffset(topic)).isNull();
+  }
+
+  @Test
+  @GerritConfig(name = "plugin.events-kafka.enableAutoCommit", value = "false")
+  public void shouldRejectAckForAlreadyAcknowledgedEvent() throws Exception {
+    String topic = "manual_commit_reject_duplicate_ack_topic";
     CountDownLatch latch = new CountDownLatch(3);
     AtomicInteger consumedMessages = new AtomicInteger();
-    AtomicReference<Event> firstEvent = new AtomicReference<>();
-    AtomicReference<MessageAcknowledgement<Event>> firstAcknowledgement = new AtomicReference<>();
     AtomicReference<MessageAcknowledgementException> thrown = new AtomicReference<>();
     BrokerApi brokerApi = kafkaBrokerApi();
 
@@ -129,14 +148,10 @@ public class ManualCommitIT extends LightweightPluginDaemonTest {
           topic,
           (ev, acknowledgement) -> {
             int messageNumber = consumedMessages.incrementAndGet();
-            if (messageNumber == 1) {
-              firstEvent.set(ev);
-              firstAcknowledgement.set(acknowledgement);
-            }
             if (messageNumber == 2) {
               acknowledgement.ack(ev);
               try {
-                firstAcknowledgement.get().ack(firstEvent.get());
+                acknowledgement.ack(ev);
               } catch (MessageAcknowledgementException e) {
                 thrown.set(e);
               }
@@ -155,15 +170,12 @@ public class ManualCommitIT extends LightweightPluginDaemonTest {
 
   @Test
   @GerritConfig(name = "plugin.events-kafka.enableAutoCommit", value = "false")
-  public void shouldRejectAckForRemovedEventWhenLaterRecordsFromSamePartitionArePending()
-      throws Exception {
-    String topic = "manual_commit_reject_removed_event_ack_with_pending_records_topic";
+  public void shouldRejectAckForOlderEventAndCommitCurrentEvent() throws Exception {
+    String topic = "manual_commit_reject_stale_ack_topic";
     CountDownLatch latch = new CountDownLatch(3);
     AtomicInteger consumedMessages = new AtomicInteger();
     AtomicReference<Event> firstEvent = new AtomicReference<>();
     AtomicReference<MessageAcknowledgement<Event>> firstAcknowledgement = new AtomicReference<>();
-    AtomicReference<Event> secondEvent = new AtomicReference<>();
-    AtomicReference<MessageAcknowledgement<Event>> secondAcknowledgement = new AtomicReference<>();
     AtomicReference<MessageAcknowledgementException> thrown = new AtomicReference<>();
     BrokerApi brokerApi = kafkaBrokerApi();
 
@@ -179,17 +191,13 @@ public class ManualCommitIT extends LightweightPluginDaemonTest {
               firstEvent.set(ev);
               firstAcknowledgement.set(acknowledgement);
             }
-            if (messageNumber == 2) {
-              secondEvent.set(ev);
-              secondAcknowledgement.set(acknowledgement);
-            }
             if (messageNumber == 3) {
-              secondAcknowledgement.get().ack(secondEvent.get());
               try {
                 firstAcknowledgement.get().ack(firstEvent.get());
               } catch (MessageAcknowledgementException e) {
                 thrown.set(e);
               }
+              acknowledgement.ack(ev);
             }
             latch.countDown();
           });
@@ -199,7 +207,7 @@ public class ManualCommitIT extends LightweightPluginDaemonTest {
       brokerApi.disconnect(topic, null);
     }
 
-    assertThat(getCommittedOffset(topic).offset()).isEqualTo(2L);
+    assertThat(getCommittedOffset(topic).offset()).isEqualTo(3L);
     assertThat(consumedMessages.get()).isEqualTo(3);
     assertThat(thrown.get()).hasMessageThat().contains("Invalid or already acked Event");
   }
@@ -367,5 +375,21 @@ public class ManualCommitIT extends LightweightPluginDaemonTest {
 
   private KafkaSubscriberProperties kafkaSubscriberProperties() {
     return plugin.getSysInjector().getInstance(KafkaSubscriberProperties.class);
+  }
+
+  private static class TestEvent extends Event {
+    private TestEvent() {
+      super("manual-commit-test-event");
+    }
+
+    @Override
+    public boolean equals(Object other) {
+      return other instanceof TestEvent;
+    }
+
+    @Override
+    public int hashCode() {
+      return getType().hashCode();
+    }
   }
 }

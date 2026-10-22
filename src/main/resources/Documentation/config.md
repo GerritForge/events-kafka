@@ -56,6 +56,10 @@ Additional properties
 	`ack()` performs a Kafka offset commit on the underlying Kafka consumer.
 	Kafka consumers are not thread-safe, so callers must invoke `ack()` synchronously from the
 	consumer callback thread.
+	Only the latest event delivered from each partition can be acknowledged. Pass the original
+	event instance received by the callback; equal copies are not accepted. Attempts to
+	acknowledge an older event or an already acknowledged event are rejected. Clients can batch
+	acknowledgements by skipping earlier events and acknowledging the latest event when ready.
 	`ack()` commits the next offset for the acknowledged record immediately. If multiple records
 	from the same partition are processed out of order, acknowledging a later record can commit past
 	earlier records that have not been processed successfully yet. Clients using explicit
