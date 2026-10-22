@@ -112,12 +112,10 @@ public class ManualCommitIT extends LightweightPluginDaemonTest {
 
   @Test
   @GerritConfig(name = "plugin.events-kafka.enableAutoCommit", value = "false")
-  public void shouldRemovePreviousRecordsFromSamePartitionWhenAckIsCalled() throws Exception {
+  public void shouldRejectAckForAlreadyAcknowledgedEvent() throws Exception {
     String topic = "manual_commit_ack_removes_previous_records_topic";
     CountDownLatch latch = new CountDownLatch(3);
     AtomicInteger consumedMessages = new AtomicInteger();
-    AtomicReference<Event> firstEvent = new AtomicReference<>();
-    AtomicReference<MessageAcknowledgement<Event>> firstAcknowledgement = new AtomicReference<>();
     AtomicReference<MessageAcknowledgementException> thrown = new AtomicReference<>();
     BrokerApi brokerApi = kafkaBrokerApi();
 
@@ -129,14 +127,10 @@ public class ManualCommitIT extends LightweightPluginDaemonTest {
           topic,
           (ev, acknowledgement) -> {
             int messageNumber = consumedMessages.incrementAndGet();
-            if (messageNumber == 1) {
-              firstEvent.set(ev);
-              firstAcknowledgement.set(acknowledgement);
-            }
             if (messageNumber == 2) {
               acknowledgement.ack(ev);
               try {
-                firstAcknowledgement.get().ack(firstEvent.get());
+                acknowledgement.ack(ev);
               } catch (MessageAcknowledgementException e) {
                 thrown.set(e);
               }
@@ -155,15 +149,12 @@ public class ManualCommitIT extends LightweightPluginDaemonTest {
 
   @Test
   @GerritConfig(name = "plugin.events-kafka.enableAutoCommit", value = "false")
-  public void shouldRejectAckForRemovedEventWhenLaterRecordsFromSamePartitionArePending()
-      throws Exception {
+  public void shouldRejectAckForOlderEventAndCommitCurrentEvent() throws Exception {
     String topic = "manual_commit_reject_removed_event_ack_with_pending_records_topic";
     CountDownLatch latch = new CountDownLatch(3);
     AtomicInteger consumedMessages = new AtomicInteger();
     AtomicReference<Event> firstEvent = new AtomicReference<>();
     AtomicReference<MessageAcknowledgement<Event>> firstAcknowledgement = new AtomicReference<>();
-    AtomicReference<Event> secondEvent = new AtomicReference<>();
-    AtomicReference<MessageAcknowledgement<Event>> secondAcknowledgement = new AtomicReference<>();
     AtomicReference<MessageAcknowledgementException> thrown = new AtomicReference<>();
     BrokerApi brokerApi = kafkaBrokerApi();
 
@@ -179,17 +170,13 @@ public class ManualCommitIT extends LightweightPluginDaemonTest {
               firstEvent.set(ev);
               firstAcknowledgement.set(acknowledgement);
             }
-            if (messageNumber == 2) {
-              secondEvent.set(ev);
-              secondAcknowledgement.set(acknowledgement);
-            }
             if (messageNumber == 3) {
-              secondAcknowledgement.get().ack(secondEvent.get());
               try {
                 firstAcknowledgement.get().ack(firstEvent.get());
               } catch (MessageAcknowledgementException e) {
                 thrown.set(e);
               }
+              acknowledgement.ack(ev);
             }
             latch.countDown();
           });
@@ -199,7 +186,7 @@ public class ManualCommitIT extends LightweightPluginDaemonTest {
       brokerApi.disconnect(topic, null);
     }
 
-    assertThat(getCommittedOffset(topic).offset()).isEqualTo(2L);
+    assertThat(getCommittedOffset(topic).offset()).isEqualTo(3L);
     assertThat(consumedMessages.get()).isEqualTo(3);
     assertThat(thrown.get()).hasMessageThat().contains("Invalid or already acked Event");
   }

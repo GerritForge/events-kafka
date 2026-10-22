@@ -29,8 +29,6 @@ import com.google.inject.assistedinject.Assisted;
 import java.time.Duration;
 import java.util.Collections;
 import java.util.HashMap;
-import java.util.Iterator;
-import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Random;
@@ -184,9 +182,10 @@ public class KafkaEventNativeSubscriber implements KafkaEventSubscriber {
 
   private class ReceiverJob implements Runnable {
     private final Consumer<byte[], byte[]> consumer;
-    private final Map<TopicPartition, LinkedHashMap<Event, ConsumerRecord<byte[], byte[]>>>
-        ackRecords = new HashMap<>();
+    private final Map<TopicPartition, PendingRecord> ackRecords = new HashMap<>();
     private final BrokerApiMessageListener messageListener;
+
+    private record PendingRecord(Event event, ConsumerRecord<byte[], byte[]> record) {}
 
     public ReceiverJob(
         Consumer<byte[], byte[]> consumer, BrokerApiMessageListener messageListener) {
@@ -209,31 +208,20 @@ public class KafkaEventNativeSubscriber implements KafkaEventSubscriber {
     }
 
     private void kafkaAck(Event event, TopicPartition tp) {
-      LinkedHashMap<Event, ConsumerRecord<byte[], byte[]>> eventsToCRs = ackRecords.get(tp);
-      if (eventsToCRs == null || !eventsToCRs.containsKey(event)) {
+      PendingRecord pending = ackRecords.get(tp);
+      if (pending == null || pending.event() != event) {
         throw new MessageAcknowledgementException("Invalid or already acked Event");
       }
 
-      ConsumerRecord<byte[], byte[]> consumerRecord = eventsToCRs.get(event);
+      ConsumerRecord<byte[], byte[]> consumerRecord = pending.record();
       long offset = consumerRecord.offset() + 1;
       try {
         consumer.commitSync(Map.of(tp, new OffsetAndMetadata(offset)));
         logger.atFine().log("Committed offset %d on %s", offset, tp);
-        removeAckedRecords(tp, event);
+        ackRecords.remove(tp);
       } catch (KafkaException e) {
         throw new MessageAcknowledgementException(
             String.format("Failed to acknowledge offset %d on %s", offset, tp), e);
-      }
-    }
-
-    private void removeAckedRecords(TopicPartition tp, Event event) {
-      Iterator<Event> events = ackRecords.get(tp).keySet().iterator();
-      while (events.hasNext()) {
-        Event currentEvent = events.next();
-        events.remove();
-        if (currentEvent.equals(event)) {
-          break;
-        }
       }
     }
 
@@ -266,9 +254,7 @@ public class KafkaEventNativeSubscriber implements KafkaEventSubscriber {
                   } else {
                     TopicPartition tp =
                         new TopicPartition(consumerRecord.topic(), consumerRecord.partition());
-                    ackRecords
-                        .computeIfAbsent(tp, ignored -> new LinkedHashMap<>())
-                        .put(event, consumerRecord);
+                    ackRecords.put(tp, new PendingRecord(event, consumerRecord));
                     messageProcessor.accept(event, eventToAck -> kafkaAck(eventToAck, tp));
                   }
                   messageListener.messageProcessed(
