@@ -268,7 +268,7 @@ public class KafkaEventNativeSubscriber implements KafkaEventSubscriber {
                         new TopicPartition(consumerRecord.topic(), consumerRecord.partition());
                     ackRecords
                         .computeIfAbsent(tp, ignored -> new LinkedHashMap<>())
-                        .put(event, consumerRecord);
+                        .putLast(event, consumerRecord);
                     messageProcessor.accept(event, eventToAck -> kafkaAck(eventToAck, tp));
                   }
                   messageListener.messageProcessed(
