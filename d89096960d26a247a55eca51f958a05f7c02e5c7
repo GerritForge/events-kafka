@@ -22,6 +22,30 @@
       },
       "revId": "d89096960d26a247a55eca51f958a05f7c02e5c7",
       "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "930a3769_62a97804",
+        "filename": "src/main/java/com/gerritforge/gerrit/plugins/kafka/subscribe/KafkaEventNativeSubscriber.java",
+        "patchSetId": 3
+      },
+      "lineNbr": 212,
+      "author": {
+        "id": 1015244
+      },
+      "writtenOn": "2026-10-23T13:27:26Z",
+      "side": 1,
+      "message": "Yes, the reference comparison is intentional because an older event can be compared as equal to the latest delivery, but we must not ack that offset; that would be wrong.\n\nAdded a test",
+      "parentUuid": "aa3306e8_1f654414",
+      "range": {
+        "startLine": 212,
+        "startChar": 44,
+        "endLine": 212,
+        "endChar": 48
+      },
+      "revId": "d89096960d26a247a55eca51f958a05f7c02e5c7",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735"
     }
   ]
 }
