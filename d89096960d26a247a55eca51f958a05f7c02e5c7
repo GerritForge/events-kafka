@@ -1,0 +1,27 @@
+{
+  "comments": [
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "aa3306e8_1f654414",
+        "filename": "src/main/java/com/gerritforge/gerrit/plugins/kafka/subscribe/KafkaEventNativeSubscriber.java",
+        "patchSetId": 3
+      },
+      "lineNbr": 212,
+      "author": {
+        "id": 1012541
+      },
+      "writtenOn": "2026-10-23T08:18:39Z",
+      "side": 1,
+      "message": "We are checking object equality on purpose, right?\n\nSince it is important not to switch it to value equality, it might be worth having a test documenting this behaviour. I don\u0027t think we have one at the moment.\n\nOr maybe just add a comment.",
+      "range": {
+        "startLine": 212,
+        "startChar": 44,
+        "endLine": 212,
+        "endChar": 48
+      },
+      "revId": "d89096960d26a247a55eca51f958a05f7c02e5c7",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735"
+    }
+  ]
+}
