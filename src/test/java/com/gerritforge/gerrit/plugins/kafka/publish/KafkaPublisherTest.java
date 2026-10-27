@@ -15,7 +15,9 @@ import static com.google.common.truth.Truth.assertThat;
 import static org.junit.Assert.assertThrows;
 import static org.mockito.Mockito.when;
 
+import com.gerritforge.gerrit.eventbroker.EventSerializer;
 import com.gerritforge.gerrit.eventbroker.EventsBrokerConfiguration;
+import com.gerritforge.gerrit.eventbroker.MessageMetadata;
 import com.gerritforge.gerrit.eventbroker.log.MessageLogger;
 import com.gerritforge.gerrit.plugins.kafka.config.KafkaProperties;
 import com.gerritforge.gerrit.plugins.kafka.session.KafkaSession;
@@ -45,8 +47,9 @@ public class KafkaPublisherTest {
 
   @Before
   public void setUp() {
+    Gson gson = new Gson();
     publisher =
-        new KafkaPublisher(session, new Gson(), properties, configuration) {
+        new KafkaPublisher(session, gson, new EventSerializer(gson), properties, configuration) {
           @Override
           public JsonObject eventToJson(Event event) {
             return eventJson;
@@ -97,7 +100,12 @@ public class KafkaPublisherTest {
     assertThat(
             assertThrows(
                 IllegalArgumentException.class,
-                () -> publisher.publish(TOPIC, new TestEvent(), MessageLogger.Direction.PUBLISH)))
+                () ->
+                    publisher.publish(
+                        TOPIC,
+                        new TestEvent(),
+                        MessageMetadata.EMPTY,
+                        MessageLogger.Direction.PUBLISH)))
         .hasMessageThat()
         .isEqualTo(message);
   }

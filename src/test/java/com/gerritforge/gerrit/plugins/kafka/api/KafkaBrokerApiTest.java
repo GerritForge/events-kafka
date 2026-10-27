@@ -25,6 +25,7 @@ import com.gerritforge.gerrit.eventbroker.AckAwareConsumer;
 import com.gerritforge.gerrit.eventbroker.BrokerApiMessageListener;
 import com.gerritforge.gerrit.eventbroker.EventsBrokerConfiguration;
 import com.gerritforge.gerrit.eventbroker.MessageAcknowledgement;
+import com.gerritforge.gerrit.eventbroker.MessageMetadata;
 import com.gerritforge.gerrit.eventbroker.log.MessageLogger;
 import com.gerritforge.gerrit.plugins.kafka.KafkaContainerProvider;
 import com.gerritforge.gerrit.plugins.kafka.config.KafkaProperties;
@@ -180,6 +181,7 @@ public class KafkaBrokerApiTest {
 
   public static class TestConsumer implements AckAwareConsumer<Event> {
     public final List<Event> messages = new ArrayList<>();
+    public final List<MessageMetadata> metadata = new ArrayList<>();
     public int acknowledgedMessages;
     private final boolean autoCommitEnabled;
     private CountDownLatch[] locks;
@@ -201,8 +203,12 @@ public class KafkaBrokerApiTest {
     }
 
     @Override
-    public void accept(Event message, MessageAcknowledgement<Event> messageAcknowledgement) {
+    public void accept(
+        Event message,
+        MessageMetadata messageMetadata,
+        MessageAcknowledgement<Event> messageAcknowledgement) {
       messages.add(message);
+      metadata.add(messageMetadata);
       if (!autoCommitEnabled) {
         messageAcknowledgement.ack(message);
         acknowledgedMessages++;
@@ -330,6 +336,27 @@ public class KafkaBrokerApiTest {
     assertThat(testConsumer.await()).isTrue();
     assertThat(testConsumer.messages).hasSize(1);
     assertThat(gson.toJson(testConsumer.messages.get(0))).isEqualTo(gson.toJson(testEventMessage));
+
+    assertNoMoreExpectedMessages(testConsumer);
+  }
+
+  @Test
+  public void shouldRequeueMessageWithMetadata() throws Exception {
+    KafkaBrokerApi kafkaBrokerApi = newKafkaBrokerApi();
+    String testTopic = testTopic();
+    TestConsumer testConsumer = new TestConsumer(1);
+    Event testEventMessage = new ProjectCreatedEvent();
+    testEventMessage.instanceId = TEST_INSTANCE_ID;
+    MessageMetadata metadata =
+        new MessageMetadata(new MessageMetadata.Retry(2, 1000L, TEST_INSTANCE_ID));
+
+    kafkaBrokerApi.receiveAsync(testTopic, testConsumer);
+    assertThat(kafkaBrokerApi.requeue(testTopic, testEventMessage, metadata).get()).isTrue();
+
+    assertThat(testConsumer.await()).isTrue();
+    assertThat(testConsumer.messages).hasSize(1);
+    assertThat(gson.toJson(testConsumer.messages.get(0))).isEqualTo(gson.toJson(testEventMessage));
+    assertThat(testConsumer.metadata).containsExactly(metadata);
 
     assertNoMoreExpectedMessages(testConsumer);
   }
