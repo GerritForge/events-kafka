@@ -146,7 +146,7 @@ public class ManualCommitIT extends LightweightPluginDaemonTest {
       brokerApi.send(topic, newProjectCreatedEvent(instanceId, 3L));
       brokerApi.receiveAsync(
           topic,
-          (ev, acknowledgement) -> {
+          (ev, meta, acknowledgement) -> {
             int messageNumber = consumedMessages.incrementAndGet();
             if (messageNumber == 2) {
               acknowledgement.ack(ev);
@@ -185,7 +185,7 @@ public class ManualCommitIT extends LightweightPluginDaemonTest {
       brokerApi.send(topic, newProjectCreatedEvent(instanceId, 3L));
       brokerApi.receiveAsync(
           topic,
-          (ev, acknowledgement) -> {
+          (ev, meta, acknowledgement) -> {
             int messageNumber = consumedMessages.incrementAndGet();
             if (messageNumber == 1) {
               firstEvent.set(ev);
@@ -230,7 +230,7 @@ public class ManualCommitIT extends LightweightPluginDaemonTest {
           topic, PARTITION_1, newProjectCreatedEvent(instanceId, PARTITION_1_EVENT_CREATED_ON));
       brokerApi.receiveAsync(
           topic,
-          (ev, acknowledgement) -> {
+          (ev, meta, acknowledgement) -> {
             if (ev.eventCreatedOn == PARTITION_0_EVENT_CREATED_ON) {
               partition0Event.set(ev);
               partition0Ack.set(acknowledgement);
@@ -307,7 +307,7 @@ public class ManualCommitIT extends LightweightPluginDaemonTest {
       brokerApi.send(topic, event);
       brokerApi.receiveAsync(
           topic,
-          (ev, msgAck) -> {
+          (ev, meta, msgAck) -> {
             acknowledgementConsumer.accept(ev, msgAck);
             latch.countDown();
           });
