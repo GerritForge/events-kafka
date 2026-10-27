@@ -16,6 +16,7 @@ import static org.junit.Assert.assertThrows;
 
 import com.gerritforge.gerrit.eventbroker.BrokerApi;
 import com.gerritforge.gerrit.eventbroker.BrokerApiModule;
+import com.gerritforge.gerrit.eventbroker.EventMetadata;
 import com.gerritforge.gerrit.eventbroker.MessageAcknowledgement;
 import com.gerritforge.gerrit.eventbroker.MessageAcknowledgementException;
 import com.gerritforge.gerrit.plugins.kafka.config.KafkaProperties;
@@ -31,10 +32,12 @@ import com.google.gerrit.server.events.ProjectCreatedEvent;
 import com.google.gson.Gson;
 import com.google.inject.Module;
 import java.time.Duration;
+import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.Properties;
 import java.util.Set;
+import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
@@ -138,6 +141,7 @@ public class ManualCommitIT extends LightweightPluginDaemonTest {
     CountDownLatch latch = new CountDownLatch(3);
     AtomicInteger consumedMessages = new AtomicInteger();
     AtomicReference<MessageAcknowledgementException> thrown = new AtomicReference<>();
+    List<EventMetadata> receivedMetadata = new CopyOnWriteArrayList<>();
     BrokerApi brokerApi = kafkaBrokerApi();
 
     try {
@@ -146,7 +150,8 @@ public class ManualCommitIT extends LightweightPluginDaemonTest {
       brokerApi.send(topic, newProjectCreatedEvent(instanceId, 3L));
       brokerApi.receiveAsync(
           topic,
-          (ev, acknowledgement) -> {
+          (ev, meta, acknowledgement) -> {
+            receivedMetadata.add(meta);
             int messageNumber = consumedMessages.incrementAndGet();
             if (messageNumber == 2) {
               acknowledgement.ack(ev);
@@ -166,6 +171,8 @@ public class ManualCommitIT extends LightweightPluginDaemonTest {
 
     assertThat(getCommittedOffset(topic).offset()).isEqualTo(2L);
     assertThat(thrown.get()).hasMessageThat().contains("Invalid or already acked Event");
+    assertThat(receivedMetadata)
+        .containsExactlyElementsIn(Collections.nCopies(3, EventMetadata.EMPTY));
   }
 
   @Test
@@ -177,6 +184,7 @@ public class ManualCommitIT extends LightweightPluginDaemonTest {
     AtomicReference<Event> firstEvent = new AtomicReference<>();
     AtomicReference<MessageAcknowledgement<Event>> firstAcknowledgement = new AtomicReference<>();
     AtomicReference<MessageAcknowledgementException> thrown = new AtomicReference<>();
+    List<EventMetadata> receivedMetadata = new CopyOnWriteArrayList<>();
     BrokerApi brokerApi = kafkaBrokerApi();
 
     try {
@@ -185,7 +193,8 @@ public class ManualCommitIT extends LightweightPluginDaemonTest {
       brokerApi.send(topic, newProjectCreatedEvent(instanceId, 3L));
       brokerApi.receiveAsync(
           topic,
-          (ev, acknowledgement) -> {
+          (ev, meta, acknowledgement) -> {
+            receivedMetadata.add(meta);
             int messageNumber = consumedMessages.incrementAndGet();
             if (messageNumber == 1) {
               firstEvent.set(ev);
@@ -210,6 +219,8 @@ public class ManualCommitIT extends LightweightPluginDaemonTest {
     assertThat(getCommittedOffset(topic).offset()).isEqualTo(3L);
     assertThat(consumedMessages.get()).isEqualTo(3);
     assertThat(thrown.get()).hasMessageThat().contains("Invalid or already acked Event");
+    assertThat(receivedMetadata)
+        .containsExactlyElementsIn(Collections.nCopies(3, EventMetadata.EMPTY));
   }
 
   @Test
@@ -221,6 +232,7 @@ public class ManualCommitIT extends LightweightPluginDaemonTest {
     AtomicReference<MessageAcknowledgement<Event>> partition0Ack = new AtomicReference<>();
     AtomicReference<Event> partition1Event = new AtomicReference<>();
     AtomicReference<MessageAcknowledgement<Event>> partition1Ack = new AtomicReference<>();
+    List<EventMetadata> receivedMetadata = new CopyOnWriteArrayList<>();
     BrokerApi brokerApi = kafkaBrokerApi();
 
     try {
@@ -230,7 +242,8 @@ public class ManualCommitIT extends LightweightPluginDaemonTest {
           topic, PARTITION_1, newProjectCreatedEvent(instanceId, PARTITION_1_EVENT_CREATED_ON));
       brokerApi.receiveAsync(
           topic,
-          (ev, acknowledgement) -> {
+          (ev, meta, acknowledgement) -> {
+            receivedMetadata.add(meta);
             if (ev.eventCreatedOn == PARTITION_0_EVENT_CREATED_ON) {
               partition0Event.set(ev);
               partition0Ack.set(acknowledgement);
@@ -253,6 +266,7 @@ public class ManualCommitIT extends LightweightPluginDaemonTest {
 
     assertThat(getCommittedOffset(topic, PARTITION_0).offset()).isEqualTo(1L);
     assertThat(getCommittedOffset(topic, PARTITION_1).offset()).isEqualTo(1L);
+    assertThat(receivedMetadata).containsExactly(EventMetadata.EMPTY, EventMetadata.EMPTY);
   }
 
   @Test
@@ -301,13 +315,15 @@ public class ManualCommitIT extends LightweightPluginDaemonTest {
       BiConsumer<Event, MessageAcknowledgement<Event>> acknowledgementConsumer)
       throws InterruptedException {
     CountDownLatch latch = new CountDownLatch(1);
+    AtomicReference<EventMetadata> receivedMetadata = new AtomicReference<>();
     BrokerApi brokerApi = kafkaBrokerApi();
 
     try {
       brokerApi.send(topic, event);
       brokerApi.receiveAsync(
           topic,
-          (ev, msgAck) -> {
+          (ev, meta, msgAck) -> {
+            receivedMetadata.set(meta);
             acknowledgementConsumer.accept(ev, msgAck);
             latch.countDown();
           });
@@ -316,6 +332,7 @@ public class ManualCommitIT extends LightweightPluginDaemonTest {
     } finally {
       brokerApi.disconnect(topic, null);
     }
+    assertThat(receivedMetadata.get()).isEqualTo(EventMetadata.EMPTY);
   }
 
   private Event newProjectCreatedEvent(String instanceId) {

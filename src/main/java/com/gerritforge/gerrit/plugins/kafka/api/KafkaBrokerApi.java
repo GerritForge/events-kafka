@@ -15,6 +15,7 @@ import com.gerritforge.gerrit.eventbroker.AckAwareConsumer;
 import com.gerritforge.gerrit.eventbroker.BrokerApi;
 import com.gerritforge.gerrit.eventbroker.BrokerApiLoggingListener;
 import com.gerritforge.gerrit.eventbroker.BrokerApiMessageListener;
+import com.gerritforge.gerrit.eventbroker.EventMetadata;
 import com.gerritforge.gerrit.eventbroker.EventsBrokerConfiguration;
 import com.gerritforge.gerrit.eventbroker.TopicSubscriber;
 import com.gerritforge.gerrit.eventbroker.TopicSubscriberWithGroupId;
@@ -63,12 +64,14 @@ public class KafkaBrokerApi implements BrokerApi {
 
   @Override
   public ListenableFuture<Boolean> send(String topic, Event event) {
-    return publisher.publish(topic, event, MessageLogger.Direction.PUBLISH);
+    return publisher.publish(topic, event, EventMetadata.EMPTY, MessageLogger.Direction.PUBLISH);
   }
 
   @Override
-  public ListenableFuture<Boolean> requeue(String topic, Event message) {
-    return publisher.publish(topic, message, MessageLogger.Direction.REQUEUE);
+  public ListenableFuture<Boolean> requeue(String topic, Event message, EventMetadata metadata) {
+    Preconditions.checkNotNull(
+        metadata, "Metadata cannot be null, use EventMetadata.EMPTY instead");
+    return publisher.publish(topic, message, metadata, MessageLogger.Direction.REQUEUE);
   }
 
   @Override

@@ -12,6 +12,8 @@
 package com.gerritforge.gerrit.plugins.kafka.publish;
 
 import com.gerritforge.gerrit.eventbroker.BrokerApiMessageListener;
+import com.gerritforge.gerrit.eventbroker.EventMetadata;
+import com.gerritforge.gerrit.eventbroker.EventSerializer;
 import com.gerritforge.gerrit.eventbroker.EventsBrokerConfiguration;
 import com.gerritforge.gerrit.eventbroker.log.MessageLogger;
 import com.gerritforge.gerrit.plugins.kafka.config.KafkaProperties;
@@ -34,6 +36,7 @@ public class KafkaPublisher implements EventListener {
 
   private final KafkaSession session;
   private final Gson gson;
+  private final EventSerializer eventSerializer;
   private final KafkaProperties properties;
   private final EventsBrokerConfiguration eventsBrokerConfiguration;
 
@@ -41,10 +44,12 @@ public class KafkaPublisher implements EventListener {
   public KafkaPublisher(
       KafkaSession kafkaSession,
       @EventGson Gson gson,
+      EventSerializer eventSerializer,
       KafkaProperties properties,
       EventsBrokerConfiguration eventsBrokerConfiguration) {
     this.session = kafkaSession;
     this.gson = gson;
+    this.eventSerializer = eventSerializer;
     this.properties = properties;
     this.eventsBrokerConfiguration = eventsBrokerConfiguration;
   }
@@ -62,17 +67,17 @@ public class KafkaPublisher implements EventListener {
   @Override
   public void onEvent(Event event) {
     if (session.isOpen()) {
-      publish(properties.getTopic(), event, MessageLogger.Direction.PUBLISH);
+      publish(properties.getTopic(), event, EventMetadata.EMPTY, MessageLogger.Direction.PUBLISH);
     }
   }
 
   public ListenableFuture<Boolean> publish(
-      String topic, Event event, MessageLogger.Direction direction) {
-    return session.publish(topic, resolvePartition(topic, event), getPayload(event), direction);
-  }
-
-  private String getPayload(Event event) {
-    return gson.toJson(event);
+      String topic, Event event, EventMetadata metadata, MessageLogger.Direction direction) {
+    return session.publish(
+        topic,
+        resolvePartition(topic, event),
+        eventSerializer.serialize(event, metadata),
+        direction);
   }
 
   private Optional<Integer> resolvePartition(String topic, Event event) {
