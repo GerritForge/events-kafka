@@ -16,6 +16,7 @@ import com.gerritforge.gerrit.eventbroker.AckAwareConsumer;
 import com.gerritforge.gerrit.eventbroker.BrokerApiMessageListener;
 import com.gerritforge.gerrit.eventbroker.EventDeserializer;
 import com.gerritforge.gerrit.eventbroker.MessageAcknowledgementException;
+import com.gerritforge.gerrit.eventbroker.MessageMetadata;
 import com.gerritforge.gerrit.eventbroker.log.MessageLogger;
 import com.gerritforge.gerrit.plugins.kafka.broker.ConsumerExecutor;
 import com.gerritforge.gerrit.plugins.kafka.config.KafkaSubscriberProperties;
@@ -248,14 +249,18 @@ public class KafkaEventNativeSubscriber implements KafkaEventSubscriber {
 
                 try (ManualRequestContext ctx = oneOffCtx.open()) {
                   String eventString = valueDeserializer.deserialize(topic, consumerRecord.value());
-                  Event event = eventDeserializer.deserialize(eventString);
+                  EventDeserializer.Message message =
+                      eventDeserializer.deserializeMessage(eventString);
+                  Event event = message.event();
+                  MessageMetadata metadata = message.metadata();
                   if (configuration.isAutoCommitEnabled()) {
-                    messageProcessor.accept(event, KafkaAutoAcknowledgement.INSTANCE);
+                    messageProcessor.accept(event, metadata, KafkaAutoAcknowledgement.INSTANCE);
                   } else {
                     TopicPartition tp =
                         new TopicPartition(consumerRecord.topic(), consumerRecord.partition());
                     ackRecords.put(tp, new PendingRecord(event, consumerRecord));
-                    messageProcessor.accept(event, eventToAck -> kafkaAck(eventToAck, tp));
+                    messageProcessor.accept(
+                        event, metadata, eventToAck -> kafkaAck(eventToAck, tp));
                   }
                   messageListener.messageProcessed(
                       MessageLogger.Direction.CONSUME, topic, eventString);

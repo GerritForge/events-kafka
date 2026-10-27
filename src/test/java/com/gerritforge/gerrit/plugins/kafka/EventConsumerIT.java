@@ -148,7 +148,7 @@ public class EventConsumerIT extends LightweightPluginDaemonTest {
     BrokerApi kafkaBrokerApi = kafkaBrokerApi();
     kafkaBrokerApi.send(topic, eventMessage);
     kafkaBrokerApi.receiveAsync(
-        topic, consumerGroup1, (event, ignore) -> receivedEventsWithGroupId1.add(event));
+        topic, consumerGroup1, (event, meta, ignore) -> receivedEventsWithGroupId1.add(event));
 
     waitUntil(() -> receivedEventsWithGroupId1.size() == 1, WAIT_FOR_POLL_TIMEOUT);
     assertThat(gson.toJson(receivedEventsWithGroupId1.get(0))).isEqualTo(gson.toJson(eventMessage));
@@ -174,7 +174,7 @@ public class EventConsumerIT extends LightweightPluginDaemonTest {
     BrokerApi kafkaBrokerApi = kafkaBrokerApi();
     kafkaBrokerApi.send(topic, eventMessage);
 
-    kafkaBrokerApi.receiveAsync(topic, (event, ignore) -> receivedEvents.add(event));
+    kafkaBrokerApi.receiveAsync(topic, (event, meta, ignore) -> receivedEvents.add(event));
 
     waitUntil(() -> receivedEvents.size() == 1, WAIT_FOR_POLL_TIMEOUT);
 
