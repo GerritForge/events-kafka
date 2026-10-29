@@ -1,0 +1,27 @@
+{
+  "comments": [
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "39c79916_6b1a526d",
+        "filename": "src/main/java/com/gerritforge/gerrit/plugins/kafka/api/KafkaBrokerApi.java",
+        "patchSetId": 5
+      },
+      "lineNbr": 73,
+      "author": {
+        "id": 1020677
+      },
+      "writtenOn": "2026-10-29T17:28:45Z",
+      "side": 1,
+      "message": "```suggestion\n        metadata, \"Metadata cannot be null, use send() instead\");\n```",
+      "range": {
+        "startLine": 73,
+        "startChar": 44,
+        "endLine": 73,
+        "endChar": 75
+      },
+      "revId": "49b173a484f9d1f774af513761013d54ebfb1448",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735"
+    }
+  ]
+}
